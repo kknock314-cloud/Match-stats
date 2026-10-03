@@ -30,7 +30,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("createdAt", "desc")), (snap
     allMatches = [];
     snapshot.forEach((doc) => { allMatches.push({ id: doc.id, ...doc.data() }); });
     updateFilterOptions(); 
-    updateSuggestions(); 
     applyFiltersAndRender();
 });
 
@@ -120,46 +119,46 @@ const filterTeam = document.getElementById('filterTeam');
     el.addEventListener(el.tagName==='INPUT'?'input':'change', applyFiltersAndRender)
 );
 
-function setupAutocomplete(inputId, listId, dataExtractor) {
+// Smart Dropdown / Searchable Select Logic
+function setupSmartDropdown(inputId, listId, dataExtractor) {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
     
-    input.addEventListener('input', function() {
-        const val = this.value.toLowerCase().trim();
-        list.innerHTML = '';
-        if (!val) { list.style.display = 'none'; return; }
-        
+    const renderList = (queryVal) => {
         let suggestions = [...new Set(allMatches.map(dataExtractor).flat().filter(item => 
             item && item !== 'Unknown League' && item !== 'Unknown Venue' && item !== '-' && item !== 'Team 1' && item !== 'Team 2'
         ))];
         
-        suggestions = suggestions.filter(item => item.toLowerCase().includes(val));
+        if (queryVal) {
+            suggestions = suggestions.filter(item => item.toLowerCase().includes(queryVal.toLowerCase()));
+        }
         
+        list.innerHTML = '';
         if (suggestions.length === 0) { list.style.display = 'none'; return; }
         
         suggestions.forEach(item => {
             const li = document.createElement('li');
             li.textContent = item;
-            li.addEventListener('click', () => {
+            li.addEventListener('mousedown', (e) => { // mousedown prevents input blur before click registers
+                e.preventDefault();
                 input.value = item;
                 list.style.display = 'none';
             });
             list.appendChild(li);
         });
         list.style.display = 'block';
-    });
-    
-    document.addEventListener('click', (e) => {
-        if (e.target !== input && e.target !== list) list.style.display = 'none';
-    });
+    };
+
+    input.addEventListener('focus', () => renderList(input.value.trim()));
+    input.addEventListener('input', () => renderList(input.value.trim()));
+    input.addEventListener('blur', () => { setTimeout(() => list.style.display = 'none', 150); });
 }
 
-function updateSuggestions() {
-    setupAutocomplete('leagueName', 'leagueList', m => m.leagueName);
-    setupAutocomplete('venue', 'venueList', m => m.venue);
-    setupAutocomplete('team1', 'team1List', m => [m.team1, m.team2]);
-    setupAutocomplete('team2', 'team2List', m => [m.team1, m.team2]);
-}
+// Initialize Custom Smart Dropdowns
+setupSmartDropdown('leagueName', 'leagueList', m => m.leagueName);
+setupSmartDropdown('venue', 'venueList', m => m.venue);
+setupSmartDropdown('team1', 'team1List', m => [m.team1, m.team2]);
+setupSmartDropdown('team2', 'team2List', m => [m.team1, m.team2]);
 
 function updateFilterOptions() {
     const vVal = filterVenue.value, pVal = filterPitch.value, tVal = filterTeam.value;
@@ -225,7 +224,6 @@ function updateStats(matches) {
     document.getElementById('avg2ndPacers').textContent = (p2/t).toFixed(1); 
     document.getElementById('avg2ndSpinners').textContent = (s2/t).toFixed(1);
     
-    // Calculate Win Percentages
     let w1Pct = totalDecided > 0 ? Math.round((win1st / totalDecided) * 100) : 0;
     let w2Pct = totalDecided > 0 ? Math.round((win2nd / totalDecided) * 100) : 0;
     document.getElementById('win1stPct').textContent = w1Pct + '%';

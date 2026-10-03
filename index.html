@@ -52,7 +52,7 @@
             </div>
         </section>
 
-        <!-- Stats Overview Cards (Now with Win %) -->
+        <!-- Stats Overview Cards -->
         <section class="stats-grid">
             <div class="stat-box"><span class="label">1ST BAT WIN %</span><span class="value green-txt" id="win1stPct">0%</span></div>
             <div class="stat-box"><span class="label">2ND BAT (CHASE) WIN %</span><span class="value cyan-txt" id="win2ndPct">0%</span></div>
@@ -80,11 +80,6 @@
             <button type="button" id="toggleHistoryBtn" class="btn-toggle" style="display: none;">Show All Matches ⬇️</button>
         </section>
     </main>
-
-    <!-- Datalists for Suggestions -->
-    <datalist id="leagueSuggestions"></datalist>
-    <datalist id="teamSuggestions"></datalist>
-    <datalist id="venueSuggestions"></datalist>
 
     <!-- Login Modal -->
     <div class="modal-overlay" id="loginModal">
@@ -124,24 +119,36 @@
                 
                 <div class="form-group full-width autocomplete-container">
                     <label>League / Series Name</label>
-                    <input type="text" id="leagueName" list="leagueSuggestions" placeholder="e.g. IPL 2026" autocomplete="off">
+                    <div class="input-wrapper">
+                        <input type="text" id="leagueName" placeholder="Select or type new league..." autocomplete="off">
+                    </div>
+                    <ul class="autocomplete-list" id="leagueList"></ul>
                 </div>
                 
                 <div class="row-2">
                     <div class="form-group autocomplete-container">
                         <label>Team 1 (Bat First)</label>
-                        <input type="text" id="team1" list="teamSuggestions" placeholder="e.g. MI" autocomplete="off">
+                        <div class="input-wrapper">
+                            <input type="text" id="team1" placeholder="Select or type..." autocomplete="off">
+                        </div>
+                        <ul class="autocomplete-list" id="team1List"></ul>
                     </div>
                     <div class="form-group autocomplete-container">
                         <label>Team 2 (Chase)</label>
-                        <input type="text" id="team2" list="teamSuggestions" placeholder="e.g. CSK" autocomplete="off">
+                        <div class="input-wrapper">
+                            <input type="text" id="team2" placeholder="Select or type..." autocomplete="off">
+                        </div>
+                        <ul class="autocomplete-list" id="team2List"></ul>
                     </div>
                 </div>
 
                 <div class="row-2">
                     <div class="form-group autocomplete-container">
                         <label>Venue / Stadium</label>
-                        <input type="text" id="venue" list="venueSuggestions" placeholder="e.g. Wankhede" autocomplete="off">
+                        <div class="input-wrapper">
+                            <input type="text" id="venue" placeholder="Select or type..." autocomplete="off">
+                        </div>
+                        <ul class="autocomplete-list" id="venueList"></ul>
                     </div>
                     <div class="form-group">
                         <label>Pitch No. & Match No.</label>
