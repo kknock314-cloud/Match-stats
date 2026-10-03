@@ -52,8 +52,11 @@
             </div>
         </section>
 
-        <!-- Stats Overview Cards -->
+        <!-- Stats Overview Cards (Now with Win %) -->
         <section class="stats-grid">
+            <div class="stat-box"><span class="label">1ST BAT WIN %</span><span class="value green-txt" id="win1stPct">0%</span></div>
+            <div class="stat-box"><span class="label">2ND BAT (CHASE) WIN %</span><span class="value cyan-txt" id="win2ndPct">0%</span></div>
+            
             <div class="stat-box"><span class="label">AVG 1ST INNS SCORE</span><span class="value main-color-txt" id="avg1stScore">0</span></div>
             <div class="stat-box"><span class="label">AVG 2ND INNS SCORE</span><span class="value cyan-txt" id="avg2ndScore">0</span></div>
             
@@ -74,6 +77,7 @@
             <div class="match-list" id="matchList">
                 <p class="empty-state">Loading real-time matches...</p>
             </div>
+            <button type="button" id="toggleHistoryBtn" class="btn-toggle" style="display: none;">Show All Matches ⬇️</button>
         </section>
     </main>
 

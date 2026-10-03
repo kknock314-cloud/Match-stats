@@ -129,7 +129,6 @@ function setupAutocomplete(inputId, listId, dataExtractor) {
         list.innerHTML = '';
         if (!val) { list.style.display = 'none'; return; }
         
-        // Remove empty or fallback strings from suggestions
         let suggestions = [...new Set(allMatches.map(dataExtractor).flat().filter(item => 
             item && item !== 'Unknown League' && item !== 'Unknown Venue' && item !== '-' && item !== 'Team 1' && item !== 'Team 2'
         ))];
@@ -193,24 +192,57 @@ function applyFiltersAndRender() {
 }
 
 function updateStats(matches) {
-    let t = matches.length, r1=0, r2=0, w1=0, w2=0, p1=0, s1=0, p2=0, s2=0;
-    if (t === 0) return ['avg1stScore','avg2ndScore','avg1stWkts','avg2ndWkts','avg1stPacers','avg1stSpinners','avg2ndPacers','avg2ndSpinners'].forEach(id => document.getElementById(id).textContent = '0');
+    let t = matches.length;
+    let r1=0, r2=0, w1=0, w2=0, p1=0, s1=0, p2=0, s2=0;
+    let win1st = 0, win2nd = 0, totalDecided = 0;
+    
+    if (t === 0) {
+        ['avg1stScore','avg2ndScore','avg1stWkts','avg2ndWkts','avg1stPacers','avg1stSpinners','avg2ndPacers','avg2ndSpinners'].forEach(id => document.getElementById(id).textContent = '0');
+        document.getElementById('win1stPct').textContent = '0%';
+        document.getElementById('win2ndPct').textContent = '0%';
+        return;
+    }
+    
     matches.forEach(m => { 
         r1+=m.inn1?.runs||0; r2+=m.inn2?.runs||0; 
         w1+=m.inn1?.wkts||0; w2+=m.inn2?.wkts||0; 
         p1+=(m.inn1?.pacers||0); s1+=(m.inn1?.spinners||0);
         p2+=(m.inn2?.pacers||0); s2+=(m.inn2?.spinners||0);
+        
+        if (m.winner && m.winner.includes("Won")) {
+            totalDecided++;
+            if (m.winner.includes("(Chase)")) win2nd++;
+            else win1st++;
+        }
     });
-    document.getElementById('avg1stScore').textContent = Math.round(r1/t); document.getElementById('avg2ndScore').textContent = Math.round(r2/t);
-    document.getElementById('avg1stWkts').textContent = (w1/t).toFixed(1); document.getElementById('avg2ndWkts').textContent = (w2/t).toFixed(1);
-    document.getElementById('avg1stPacers').textContent = (p1/t).toFixed(1); document.getElementById('avg1stSpinners').textContent = (s1/t).toFixed(1);
-    document.getElementById('avg2ndPacers').textContent = (p2/t).toFixed(1); document.getElementById('avg2ndSpinners').textContent = (s2/t).toFixed(1);
+    
+    document.getElementById('avg1stScore').textContent = Math.round(r1/t); 
+    document.getElementById('avg2ndScore').textContent = Math.round(r2/t);
+    document.getElementById('avg1stWkts').textContent = (w1/t).toFixed(1); 
+    document.getElementById('avg2ndWkts').textContent = (w2/t).toFixed(1);
+    document.getElementById('avg1stPacers').textContent = (p1/t).toFixed(1); 
+    document.getElementById('avg1stSpinners').textContent = (s1/t).toFixed(1);
+    document.getElementById('avg2ndPacers').textContent = (p2/t).toFixed(1); 
+    document.getElementById('avg2ndSpinners').textContent = (s2/t).toFixed(1);
+    
+    // Calculate Win Percentages
+    let w1Pct = totalDecided > 0 ? Math.round((win1st / totalDecided) * 100) : 0;
+    let w2Pct = totalDecided > 0 ? Math.round((win2nd / totalDecided) * 100) : 0;
+    document.getElementById('win1stPct').textContent = w1Pct + '%';
+    document.getElementById('win2ndPct').textContent = w2Pct + '%';
 }
 
 function renderList(matches) {
     const c = document.getElementById('matchList');
-    if (matches.length === 0) return c.innerHTML = '<p class="empty-state">No matches found.</p>';
-    c.innerHTML = matches.map(m => `
+    const toggleBtn = document.getElementById('toggleHistoryBtn');
+    
+    if (matches.length === 0) {
+        c.innerHTML = '<p class="empty-state">No matches found.</p>';
+        toggleBtn.style.display = 'none';
+        return;
+    }
+    
+    const createCard = (m) => `
         <div class="match-card">
             <div class="match-card-header">
                 <span><strong>${m.team1 || 'Team 1'} vs ${m.team2 || 'Team 2'}</strong></span>
@@ -225,5 +257,32 @@ function renderList(matches) {
                 <button class="btn-edit" onclick="editMatch('${m.id}')">✏️ Edit</button><button class="btn-delete" onclick="deleteMatch('${m.id}')">🗑️ Delete</button>
             </div>
         </div>
-    `).join('');
+    `;
+
+    if (matches.length <= 2) {
+        c.innerHTML = matches.map(createCard).join('');
+        toggleBtn.style.display = 'none';
+    } else {
+        const visibleHtml = matches.slice(0, 2).map(createCard).join('');
+        const hiddenHtml = matches.slice(2).map(createCard).join('');
+        
+        c.innerHTML = `
+            ${visibleHtml}
+            <div id="hiddenLayer" class="hidden-layer">${hiddenHtml}</div>
+        `;
+        
+        toggleBtn.style.display = 'block';
+        toggleBtn.innerText = 'Show All Matches ⬇️';
+        
+        toggleBtn.onclick = function() {
+            const hiddenLayer = document.getElementById('hiddenLayer');
+            if (hiddenLayer.style.display === 'flex') {
+                hiddenLayer.style.display = 'none';
+                toggleBtn.innerText = 'Show All Matches ⬇️';
+            } else {
+                hiddenLayer.style.display = 'flex';
+                toggleBtn.innerText = 'Hide Matches ⬆️';
+            }
+        };
+    }
 }
