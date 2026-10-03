@@ -1,4 +1,4 @@
-import { db, auth } from "./firebase-config.js";
+import { db, auth } from "./firebase-config.js?v=15";
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -7,13 +7,9 @@ const addModal = document.getElementById('addModal'), loginModal = document.getE
 const matchForm = document.getElementById('matchForm'), loginForm = document.getElementById('loginForm');
 const authBtn = document.getElementById('authBtn'), openModalBtn = document.getElementById('openModalBtn');
 
-// SVG Icons for modern look
 const editSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 const trashSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
 
-// -------------------------------------------------------------
-// SMART DICTIONARY (ALIAS MAPPING)
-// -------------------------------------------------------------
 const aliases = {
     "mi": "mumbai indians",
     "csk": "chennai super kings",
@@ -51,95 +47,111 @@ function getExpandedSearchTerms(query) {
     });
     return terms;
 }
-// -------------------------------------------------------------
 
 onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
-    authBtn.innerText = isAdmin ? "Logout" : "Admin Login";
-    openModalBtn.style.display = isAdmin ? "block" : "none";
+    if(authBtn) authBtn.innerText = isAdmin ? "Logout" : "Admin Login";
+    if(openModalBtn) openModalBtn.style.display = isAdmin ? "block" : "none";
     
-    // Toggle Admin Field Actions (Edit/Delete above input box)
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = isAdmin ? 'flex' : 'none';
     });
     
-    applyFiltersAndRender();
+    try { applyFiltersAndRender(); } catch(e){}
 });
 
-authBtn.addEventListener('click', () => { isAdmin ? signOut(auth) : loginModal.style.display = 'flex'; });
-document.getElementById('closeLoginBtn').addEventListener('click', () => loginModal.style.display = 'none');
+if(authBtn) {
+    authBtn.addEventListener('click', () => { isAdmin ? signOut(auth) : loginModal.style.display = 'flex'; });
+}
+if(document.getElementById('closeLoginBtn')) {
+    document.getElementById('closeLoginBtn').addEventListener('click', () => loginModal.style.display = 'none');
+}
 
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    document.getElementById('loginError').innerText = "Logging in...";
-    try {
-        await signInWithEmailAndPassword(auth, document.getElementById('adminEmail').value, document.getElementById('adminPassword').value);
-        loginModal.style.display = 'none'; loginForm.reset(); document.getElementById('loginError').innerText = "";
-    } catch (err) { document.getElementById('loginError').innerText = "Invalid credentials!"; }
-});
+if(loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        document.getElementById('loginError').innerText = "Logging in...";
+        try {
+            await signInWithEmailAndPassword(auth, document.getElementById('adminEmail').value, document.getElementById('adminPassword').value);
+            loginModal.style.display = 'none'; loginForm.reset(); document.getElementById('loginError').innerText = "";
+        } catch (err) { document.getElementById('loginError').innerText = "Invalid credentials!"; }
+    });
+}
 
 onSnapshot(query(collection(db, "matches"), orderBy("createdAt", "desc")), (snapshot) => {
     allMatches = [];
     snapshot.forEach((doc) => { allMatches.push({ id: doc.id, ...doc.data() }); });
-    updateFilterOptions(); 
-    applyFiltersAndRender();
-});
-
-openModalBtn.addEventListener('click', () => {
-    currentEditId = null; matchForm.reset();
-    document.getElementById('modalTitle').innerText = "Add Match Scorecard";
-    document.getElementById('saveMatchBtn').innerText = "Save Scorecard";
-    addModal.style.display = 'flex';
-});
-
-document.getElementById('closeModalBtn').addEventListener('click', () => addModal.style.display = 'none');
-addModal.addEventListener('click', (e) => { if (e.target === addModal) addModal.style.display = 'none'; });
-
-matchForm.addEventListener('submit', async (e) => {
-    e.preventDefault(); if(!isAdmin) return alert("Please login first!");
-    const btn = document.getElementById('saveMatchBtn'); btn.disabled = true; btn.innerText = "Saving...";
-    
-    const run1 = parseInt(document.getElementById('inn1Runs').value) || 0;
-    const run2 = parseInt(document.getElementById('inn2Runs').value) || 0;
-    const team1Name = document.getElementById('team1').value.trim() || "Team 1";
-    const team2Name = document.getElementById('team2').value.trim() || "Team 2";
-    
-    let winner = "Result Pending";
-    if (run1 > run2) winner = `${team1Name} Won`;
-    else if (run2 > run1) winner = `${team2Name} Won (Chase)`;
-    else if (run1 > 0 && run1 === run2) winner = "Match Tied";
-    
-    const payload = {
-        leagueType: document.getElementById('leagueType').value, format: document.getElementById('format').value,
-        leagueName: document.getElementById('leagueName').value.trim() || 'Unknown League', 
-        team1: team1Name, team2: team2Name,
-        venue: document.getElementById('venue').value.trim() || 'Unknown Venue',
-        pitchNo: document.getElementById('pitchNo').value.trim() || '-', 
-        matchNo: document.getElementById('matchNo').value.trim() || '-',
-        inn1: { 
-            runs: run1, 
-            wkts: parseInt(document.getElementById('inn1Wkts').value)||0, 
-            overs: parseFloat(document.getElementById('inn1Overs').value)||0, 
-            pacers: parseInt(document.getElementById('inn1Pacers').value)||0, 
-            spinners: parseInt(document.getElementById('inn1Spinners').value)||0 
-        },
-        inn2: { 
-            runs: run2, 
-            wkts: parseInt(document.getElementById('inn2Wkts').value)||0, 
-            overs: parseFloat(document.getElementById('inn2Overs').value)||0, 
-            pacers: parseInt(document.getElementById('inn2Pacers').value)||0, 
-            spinners: parseInt(document.getElementById('inn2Spinners').value)||0 
-        },
-        winner: winner,
-    };
-    
     try {
-        if (currentEditId) await updateDoc(doc(db, "matches", currentEditId), payload);
-        else { payload.createdAt = serverTimestamp(); await addDoc(collection(db, "matches"), payload); }
-        addModal.style.display = 'none'; matchForm.reset();
-    } catch (err) { alert("Action failed."); } 
-    finally { btn.disabled = false; btn.innerText = "Save Scorecard"; }
+        updateFilterOptions(); 
+        applyFiltersAndRender();
+    } catch(err) {
+        console.error("Render error: ", err);
+    }
 });
+
+if(openModalBtn) {
+    openModalBtn.addEventListener('click', () => {
+        currentEditId = null; matchForm.reset();
+        document.getElementById('modalTitle').innerText = "Add Match Scorecard";
+        document.getElementById('saveMatchBtn').innerText = "Save Scorecard";
+        addModal.style.display = 'flex';
+    });
+}
+
+if(document.getElementById('closeModalBtn')) {
+    document.getElementById('closeModalBtn').addEventListener('click', () => addModal.style.display = 'none');
+}
+if(addModal) {
+    addModal.addEventListener('click', (e) => { if (e.target === addModal) addModal.style.display = 'none'; });
+}
+
+if(matchForm) {
+    matchForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); if(!isAdmin) return alert("Please login first!");
+        const btn = document.getElementById('saveMatchBtn'); btn.disabled = true; btn.innerText = "Saving...";
+        
+        const run1 = parseInt(document.getElementById('inn1Runs').value) || 0;
+        const run2 = parseInt(document.getElementById('inn2Runs').value) || 0;
+        const team1Name = document.getElementById('team1').value.trim() || "Team 1";
+        const team2Name = document.getElementById('team2').value.trim() || "Team 2";
+        
+        let winner = "Result Pending";
+        if (run1 > run2) winner = `${team1Name} Won`;
+        else if (run2 > run1) winner = `${team2Name} Won (Chase)`;
+        else if (run1 > 0 && run1 === run2) winner = "Match Tied";
+        
+        const payload = {
+            leagueType: document.getElementById('leagueType').value, format: document.getElementById('format').value,
+            leagueName: document.getElementById('leagueName').value.trim() || 'Unknown League', 
+            team1: team1Name, team2: team2Name,
+            venue: document.getElementById('venue').value.trim() || 'Unknown Venue',
+            pitchNo: document.getElementById('pitchNo').value.trim() || '-', 
+            matchNo: document.getElementById('matchNo').value.trim() || '-',
+            inn1: { 
+                runs: run1, 
+                wkts: parseInt(document.getElementById('inn1Wkts').value)||0, 
+                overs: parseFloat(document.getElementById('inn1Overs').value)||0, 
+                pacers: parseInt(document.getElementById('inn1Pacers').value)||0, 
+                spinners: parseInt(document.getElementById('inn1Spinners').value)||0 
+            },
+            inn2: { 
+                runs: run2, 
+                wkts: parseInt(document.getElementById('inn2Wkts').value)||0, 
+                overs: parseFloat(document.getElementById('inn2Overs').value)||0, 
+                pacers: parseInt(document.getElementById('inn2Pacers').value)||0, 
+                spinners: parseInt(document.getElementById('inn2Spinners').value)||0 
+            },
+            winner: winner,
+        };
+        
+        try {
+            if (currentEditId) await updateDoc(doc(db, "matches", currentEditId), payload);
+            else { payload.createdAt = serverTimestamp(); await addDoc(collection(db, "matches"), payload); }
+            addModal.style.display = 'none'; matchForm.reset();
+        } catch (err) { alert("Action failed."); } 
+        finally { btn.disabled = false; btn.innerText = "Save Scorecard"; }
+    });
+}
 
 window.editMatch = (id) => {
     const m = allMatches.find(x => x.id === id); if(!m) return;
@@ -165,16 +177,13 @@ const filterVenue = document.getElementById('filterVenue');
 const filterFormat = document.getElementById('filterFormat');
 const filterPitch = document.getElementById('filterPitch');
 const filterTeam = document.getElementById('filterTeam');
-// NEW: League Filter added
 const filterLeague = document.getElementById('filterLeague');
 
-[searchInput, filterVenue, filterFormat, filterPitch, filterTeam, filterLeague].forEach(el => 
-    el.addEventListener(el.tagName==='INPUT'?'input':'change', applyFiltersAndRender)
-);
+[searchInput, filterVenue, filterFormat, filterPitch, filterTeam, filterLeague].forEach(el => {
+    if(el) el.addEventListener(el.tagName==='INPUT'?'input':'change', applyFiltersAndRender);
+});
 
-// -------------------------------------------------------------
-// NEW: Label Level Edit & Delete Field Actions
-// -------------------------------------------------------------
+// Edit & Delete Field Actions
 document.querySelectorAll('.edit-action').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -210,7 +219,6 @@ document.querySelectorAll('.del-action').forEach(btn => {
     });
 });
 
-// Global Rename & Delete Functions
 async function renameFieldGlobally(fieldType, oldVal, newVal) {
     try {
         const matchesToUpdate = allMatches.filter(m => {
@@ -253,13 +261,10 @@ async function deleteFieldGlobally(fieldType, val) {
     } catch(err) { alert("Failed to delete: " + err.message); }
 }
 
-
-// -------------------------------------------------------------
-// Smart Dropdown / Searchable Select
-// -------------------------------------------------------------
 function setupSmartDropdown(inputId, listId, dataExtractor) {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
+    if(!input || !list) return;
     
     const renderList = (queryVal) => {
         let suggestions = [...new Set(allMatches.map(dataExtractor).flat().filter(item => 
@@ -301,36 +306,41 @@ setupSmartDropdown('team1', 'team1List', m => [m.team1, m.team2]);
 setupSmartDropdown('team2', 'team2List', m => [m.team1, m.team2]);
 
 function updateFilterOptions() {
-    const lVal = filterLeague.value, vVal = filterVenue.value, pVal = filterPitch.value, tVal = filterTeam.value;
+    const lVal = filterLeague?.value || 'All';
+    const vVal = filterVenue?.value || 'All';
+    const pVal = filterPitch?.value || 'All';
+    const tVal = filterTeam?.value || 'All';
     
     const leagues = [...new Set(allMatches.map(m => m.leagueName).filter(l => l && l !== 'Unknown League' && l !== '-'))];
     const venues = [...new Set(allMatches.map(m => m.venue).filter(v => v && v !== 'Unknown Venue' && v !== '-'))];
     const pitches = [...new Set(allMatches.map(m => m.pitchNo).filter(p => p && p !== '-'))];
     const teams = [...new Set(allMatches.flatMap(m => [m.team1, m.team2]).filter(t => t && t !== 'Team 1' && t !== 'Team 2' && t !== '-'))];
     
-    filterLeague.innerHTML = '<option value="All">All Leagues</option>' + leagues.map(l => `<option value="${l}">${l}</option>`).join('');
-    filterVenue.innerHTML = '<option value="All">All Venues</option>' + venues.map(v => `<option value="${v}">${v}</option>`).join('');
-    filterPitch.innerHTML = '<option value="All">All Pitches</option>' + pitches.map(p => `<option value="${p}">${p}</option>`).join('');
-    filterTeam.innerHTML = '<option value="All">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
+    if(filterLeague) filterLeague.innerHTML = '<option value="All">All Leagues</option>' + leagues.map(l => `<option value="${l}">${l}</option>`).join('');
+    if(filterVenue) filterVenue.innerHTML = '<option value="All">All Venues</option>' + venues.map(v => `<option value="${v}">${v}</option>`).join('');
+    if(filterPitch) filterPitch.innerHTML = '<option value="All">All Pitches</option>' + pitches.map(p => `<option value="${p}">${p}</option>`).join('');
+    if(filterTeam) filterTeam.innerHTML = '<option value="All">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
     
-    if (leagues.includes(lVal)) filterLeague.value = lVal;
-    if (venues.includes(vVal)) filterVenue.value = vVal;
-    if (pitches.includes(pVal)) filterPitch.value = pVal;
-    if (teams.includes(tVal)) filterTeam.value = tVal;
+    if (filterLeague && leagues.includes(lVal)) filterLeague.value = lVal;
+    if (filterVenue && venues.includes(vVal)) filterVenue.value = vVal;
+    if (filterPitch && pitches.includes(pVal)) filterPitch.value = pVal;
+    if (filterTeam && teams.includes(tVal)) filterTeam.value = tVal;
 }
 
 function applyFiltersAndRender() {
-    const s = searchInput.value.toLowerCase().trim();
+    const s = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const searchTerms = getExpandedSearchTerms(s);
     
-    const l = filterLeague.value, v = filterVenue.value, f = filterFormat.value, p = filterPitch.value, t = filterTeam.value;
+    const l = filterLeague?.value || 'All';
+    const v = filterVenue?.value || 'All';
+    const f = document.getElementById('filterFormat')?.value || 'All';
+    const p = filterPitch?.value || 'All';
+    const t = filterTeam?.value || 'All';
     
     const filtered = allMatches.filter(m => {
         const matchStr = (`${m.leagueName||''} ${m.venue||''} Match ${m.matchNo||''} ${m.team1||''} ${m.team2||''}`).toLowerCase();
         
-        // Match ANY of the expanded search terms
         const matchesSearch = searchTerms.length === 0 || searchTerms.some(term => matchStr.includes(term));
-        
         const matchesLeague = (l === 'All' || m.leagueName === l);
         const matchesVenue = (v === 'All' || m.venue === v);
         const matchesFormat = (f === 'All' || m.format === f);
@@ -350,9 +360,12 @@ function updateStats(matches) {
     let win1st = 0, win2nd = 0, totalDecided = 0;
     
     if (t === 0) {
-        ['avg1stScore','avg2ndScore','avg1stWkts','avg2ndWkts','avg1stPacers','avg1stSpinners','avg2ndPacers','avg2ndSpinners'].forEach(id => document.getElementById(id).textContent = '0');
-        document.getElementById('win1stPct').textContent = '0%';
-        document.getElementById('win2ndPct').textContent = '0%';
+        ['avg1stScore','avg2ndScore','avg1stWkts','avg2ndWkts','avg1stPacers','avg1stSpinners','avg2ndPacers','avg2ndSpinners'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = '0';
+        });
+        if(document.getElementById('win1stPct')) document.getElementById('win1stPct').textContent = '0%';
+        if(document.getElementById('win2ndPct')) document.getElementById('win2ndPct').textContent = '0%';
         return;
     }
     
@@ -369,28 +382,29 @@ function updateStats(matches) {
         }
     });
     
-    document.getElementById('avg1stScore').textContent = Math.round(r1/t); 
-    document.getElementById('avg2ndScore').textContent = Math.round(r2/t);
-    document.getElementById('avg1stWkts').textContent = (w1/t).toFixed(1); 
-    document.getElementById('avg2ndWkts').textContent = (w2/t).toFixed(1);
-    document.getElementById('avg1stPacers').textContent = (p1/t).toFixed(1); 
-    document.getElementById('avg1stSpinners').textContent = (s1/t).toFixed(1);
-    document.getElementById('avg2ndPacers').textContent = (p2/t).toFixed(1); 
-    document.getElementById('avg2ndSpinners').textContent = (s2/t).toFixed(1);
+    if(document.getElementById('avg1stScore')) document.getElementById('avg1stScore').textContent = Math.round(r1/t); 
+    if(document.getElementById('avg2ndScore')) document.getElementById('avg2ndScore').textContent = Math.round(r2/t);
+    if(document.getElementById('avg1stWkts')) document.getElementById('avg1stWkts').textContent = (w1/t).toFixed(1); 
+    if(document.getElementById('avg2ndWkts')) document.getElementById('avg2ndWkts').textContent = (w2/t).toFixed(1);
+    if(document.getElementById('avg1stPacers')) document.getElementById('avg1stPacers').textContent = (p1/t).toFixed(1); 
+    if(document.getElementById('avg1stSpinners')) document.getElementById('avg1stSpinners').textContent = (s1/t).toFixed(1);
+    if(document.getElementById('avg2ndPacers')) document.getElementById('avg2ndPacers').textContent = (p2/t).toFixed(1); 
+    if(document.getElementById('avg2ndSpinners')) document.getElementById('avg2ndSpinners').textContent = (s2/t).toFixed(1);
     
     let w1Pct = totalDecided > 0 ? Math.round((win1st / totalDecided) * 100) : 0;
     let w2Pct = totalDecided > 0 ? Math.round((win2nd / totalDecided) * 100) : 0;
-    document.getElementById('win1stPct').textContent = w1Pct + '%';
-    document.getElementById('win2ndPct').textContent = w2Pct + '%';
+    if(document.getElementById('win1stPct')) document.getElementById('win1stPct').textContent = w1Pct + '%';
+    if(document.getElementById('win2ndPct')) document.getElementById('win2ndPct').textContent = w2Pct + '%';
 }
 
 function renderList(matches) {
     const c = document.getElementById('matchList');
     const toggleBtn = document.getElementById('toggleHistoryBtn');
+    if(!c) return;
     
     if (matches.length === 0) {
         c.innerHTML = '<p class="empty-state">No matches found.</p>';
-        toggleBtn.style.display = 'none';
+        if(toggleBtn) toggleBtn.style.display = 'none';
         return;
     }
     
@@ -414,7 +428,7 @@ function renderList(matches) {
 
     if (matches.length <= 2) {
         c.innerHTML = matches.map(createCard).join('');
-        toggleBtn.style.display = 'none';
+        if(toggleBtn) toggleBtn.style.display = 'none';
     } else {
         const visibleHtml = matches.slice(0, 2).map(createCard).join('');
         const hiddenHtml = matches.slice(2).map(createCard).join('');
@@ -424,18 +438,20 @@ function renderList(matches) {
             <div id="hiddenLayer" class="hidden-layer">${hiddenHtml}</div>
         `;
         
-        toggleBtn.style.display = 'block';
-        toggleBtn.innerText = 'Show All Matches ⬇️';
-        
-        toggleBtn.onclick = function() {
-            const hiddenLayer = document.getElementById('hiddenLayer');
-            if (hiddenLayer.style.display === 'flex') {
-                hiddenLayer.style.display = 'none';
-                toggleBtn.innerText = 'Show All Matches ⬇️';
-            } else {
-                hiddenLayer.style.display = 'flex';
-                toggleBtn.innerText = 'Hide Matches ⬆️';
-            }
-        };
+        if(toggleBtn) {
+            toggleBtn.style.display = 'block';
+            toggleBtn.innerText = 'Show All Matches ⬇️';
+            
+            toggleBtn.onclick = function() {
+                const hiddenLayer = document.getElementById('hiddenLayer');
+                if (hiddenLayer.style.display === 'flex') {
+                    hiddenLayer.style.display = 'none';
+                    toggleBtn.innerText = 'Show All Matches ⬇️';
+                } else {
+                    hiddenLayer.style.display = 'flex';
+                    toggleBtn.innerText = 'Hide Matches ⬆️';
+                }
+            };
+        }
     }
 }

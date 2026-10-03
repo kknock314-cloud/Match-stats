@@ -80,7 +80,7 @@ input:focus, select:focus { border-color: var(--primary); }
 .autocomplete-list li:hover { background: rgba(59, 130, 246, 0.15); }
 input::-webkit-calendar-picker-indicator { display: none !important; }
 
-/* Label Row with Action Buttons (Above input box) */
+/* Label Row with Action Buttons */
 .label-row { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 4px; }
 .field-actions { display: flex; gap: 6px; }
 .btn-label { 
