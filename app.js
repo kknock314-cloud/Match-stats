@@ -7,6 +7,48 @@ const addModal = document.getElementById('addModal'), loginModal = document.getE
 const matchForm = document.getElementById('matchForm'), loginForm = document.getElementById('loginForm');
 const authBtn = document.getElementById('authBtn'), openModalBtn = document.getElementById('openModalBtn');
 
+// -------------------------------------------------------------
+// SMART DICTIONARY (ALIAS MAPPING)
+// -------------------------------------------------------------
+const aliases = {
+    "mi": "mumbai indians",
+    "csk": "chennai super kings",
+    "rcb": "royal challengers bangalore",
+    "kkr": "kolkata knight riders",
+    "srh": "sunrisers hyderabad",
+    "dc": "delhi capitals",
+    "pbks": "punjab kings",
+    "rr": "rajasthan royals",
+    "lsg": "lucknow super giants",
+    "gt": "gujarat titans",
+    "ind": "india",
+    "pak": "pakistan",
+    "aus": "australia",
+    "eng": "england",
+    "sa": "south africa",
+    "nz": "new zealand",
+    "wi": "west indies",
+    "sl": "sri lanka",
+    "ban": "bangladesh",
+    "afg": "afghanistan",
+    "wpl": "womens premier league",
+    "ipl": "indian premier league"
+};
+
+function getExpandedSearchTerms(query) {
+    if (!query) return [];
+    const q = query.toLowerCase();
+    const terms = [q];
+    if (aliases[q]) terms.push(aliases[q].toLowerCase());
+    Object.keys(aliases).forEach(key => {
+        if (aliases[key].toLowerCase().includes(q)) {
+            terms.push(key);
+        }
+    });
+    return terms;
+}
+// -------------------------------------------------------------
+
 onAuthStateChanged(auth, (user) => {
     isAdmin = !!user;
     authBtn.innerText = isAdmin ? "Logout" : "Admin Login";
@@ -47,7 +89,6 @@ matchForm.addEventListener('submit', async (e) => {
     e.preventDefault(); if(!isAdmin) return alert("Please login first!");
     const btn = document.getElementById('saveMatchBtn'); btn.disabled = true; btn.innerText = "Saving...";
     
-    // Values with Fallbacks
     const run1 = parseInt(document.getElementById('inn1Runs').value) || 0;
     const run2 = parseInt(document.getElementById('inn2Runs').value) || 0;
     const team1Name = document.getElementById('team1').value.trim() || "Team 1";
@@ -119,8 +160,8 @@ const filterTeam = document.getElementById('filterTeam');
     el.addEventListener(el.tagName==='INPUT'?'input':'change', applyFiltersAndRender)
 );
 
-// Smart Dropdown / Searchable Select Logic
-function setupSmartDropdown(inputId, listId, dataExtractor) {
+// Smart Dropdown / Searchable Select with Edit/Delete
+function setupSmartDropdown(inputId, listId, fieldType, dataExtractor) {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
     
@@ -130,7 +171,11 @@ function setupSmartDropdown(inputId, listId, dataExtractor) {
         ))];
         
         if (queryVal) {
-            suggestions = suggestions.filter(item => item.toLowerCase().includes(queryVal.toLowerCase()));
+            const searchTerms = getExpandedSearchTerms(queryVal);
+            suggestions = suggestions.filter(item => {
+                const itemLow = item.toLowerCase();
+                return searchTerms.some(term => itemLow.includes(term));
+            });
         }
         
         list.innerHTML = '';
@@ -138,12 +183,52 @@ function setupSmartDropdown(inputId, listId, dataExtractor) {
         
         suggestions.forEach(item => {
             const li = document.createElement('li');
-            li.textContent = item;
-            li.addEventListener('mousedown', (e) => { // mousedown prevents input blur before click registers
+            
+            const span = document.createElement('span');
+            span.className = 'item-text';
+            span.textContent = item;
+            span.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 input.value = item;
                 list.style.display = 'none';
             });
+            li.appendChild(span);
+            
+            if (isAdmin) {
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'item-actions';
+                
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn-item-action';
+                editBtn.textContent = '✏️';
+                editBtn.title = 'Rename in all matches';
+                editBtn.addEventListener('mousedown', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const newName = prompt(`Rename '${item}' to:`, item);
+                    if (newName && newName.trim() && newName.trim() !== item) {
+                        await renameFieldGlobally(fieldType, item, newName.trim());
+                    }
+                });
+                
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'btn-item-action del';
+                delBtn.textContent = '🗑️';
+                delBtn.title = 'Remove from matches';
+                delBtn.addEventListener('mousedown', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm(`Remove '${item}' from existing records?`)) {
+                        await deleteFieldGlobally(fieldType, item);
+                    }
+                });
+                
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(delBtn);
+                li.appendChild(actionsDiv);
+            }
             list.appendChild(li);
         });
         list.style.display = 'block';
@@ -151,21 +236,65 @@ function setupSmartDropdown(inputId, listId, dataExtractor) {
 
     input.addEventListener('focus', () => renderList(input.value.trim()));
     input.addEventListener('input', () => renderList(input.value.trim()));
-    input.addEventListener('blur', () => { setTimeout(() => list.style.display = 'none', 150); });
+    input.addEventListener('blur', () => { setTimeout(() => list.style.display = 'none', 250); });
 }
 
-// Initialize Custom Smart Dropdowns
-setupSmartDropdown('leagueName', 'leagueList', m => m.leagueName);
-setupSmartDropdown('venue', 'venueList', m => m.venue);
-setupSmartDropdown('team1', 'team1List', m => [m.team1, m.team2]);
-setupSmartDropdown('team2', 'team2List', m => [m.team1, m.team2]);
+// Global Rename & Delete
+async function renameFieldGlobally(fieldType, oldVal, newVal) {
+    try {
+        const matchesToUpdate = allMatches.filter(m => {
+            if (fieldType === 'leagueName') return m.leagueName === oldVal;
+            if (fieldType === 'venue') return m.venue === oldVal;
+            if (fieldType === 'team') return m.team1 === oldVal || m.team2 === oldVal;
+            return false;
+        });
+        
+        for (const m of matchesToUpdate) {
+            let updatePayload = {};
+            if (fieldType === 'leagueName') updatePayload.leagueName = newVal;
+            if (fieldType === 'venue') updatePayload.venue = newVal;
+            if (fieldType === 'team') {
+                if (m.team1 === oldVal) updatePayload.team1 = newVal;
+                if (m.team2 === oldVal) updatePayload.team2 = newVal;
+            }
+            await updateDoc(doc(db, "matches", m.id), updatePayload);
+        }
+    } catch(err) { alert("Failed to update: " + err.message); }
+}
+
+async function deleteFieldGlobally(fieldType, val) {
+    try {
+        const matchesToUpdate = allMatches.filter(m => {
+            if (fieldType === 'leagueName') return m.leagueName === val;
+            if (fieldType === 'venue') return m.venue === val;
+            if (fieldType === 'team') return m.team1 === val || m.team2 === val;
+            return false;
+        });
+        
+        for (const m of matchesToUpdate) {
+            let updatePayload = {};
+            if (fieldType === 'leagueName') updatePayload.leagueName = '-';
+            if (fieldType === 'venue') updatePayload.venue = '-';
+            if (fieldType === 'team') {
+                if (m.team1 === val) updatePayload.team1 = '-';
+                if (m.team2 === val) updatePayload.team2 = '-';
+            }
+            await updateDoc(doc(db, "matches", m.id), updatePayload);
+        }
+    } catch(err) { alert("Failed to delete: " + err.message); }
+}
+
+setupSmartDropdown('leagueName', 'leagueList', 'leagueName', m => m.leagueName);
+setupSmartDropdown('venue', 'venueList', 'venue', m => m.venue);
+setupSmartDropdown('team1', 'team1List', 'team', m => [m.team1, m.team2]);
+setupSmartDropdown('team2', 'team2List', 'team', m => [m.team1, m.team2]);
 
 function updateFilterOptions() {
     const vVal = filterVenue.value, pVal = filterPitch.value, tVal = filterTeam.value;
     
-    const venues = [...new Set(allMatches.map(m => m.venue).filter(v => v && v !== 'Unknown Venue'))];
+    const venues = [...new Set(allMatches.map(m => m.venue).filter(v => v && v !== 'Unknown Venue' && v !== '-'))];
     const pitches = [...new Set(allMatches.map(m => m.pitchNo).filter(p => p && p !== '-'))];
-    const teams = [...new Set(allMatches.flatMap(m => [m.team1, m.team2]).filter(t => t && t !== 'Team 1' && t !== 'Team 2'))];
+    const teams = [...new Set(allMatches.flatMap(m => [m.team1, m.team2]).filter(t => t && t !== 'Team 1' && t !== 'Team 2' && t !== '-'))];
     
     filterVenue.innerHTML = '<option value="All">All Venues</option>' + venues.map(v => `<option value="${v}">${v}</option>`).join('');
     filterPitch.innerHTML = '<option value="All">All Pitches</option>' + pitches.map(p => `<option value="${p}">${p}</option>`).join('');
@@ -178,16 +307,26 @@ function updateFilterOptions() {
 
 function applyFiltersAndRender() {
     const s = searchInput.value.toLowerCase().trim();
+    const searchTerms = getExpandedSearchTerms(s);
+    
     const v = filterVenue.value, f = filterFormat.value, p = filterPitch.value, t = filterTeam.value;
     
-    const filtered = allMatches.filter(m => 
-        (`${m.leagueName||''} ${m.venue||''} Match ${m.matchNo||''} ${m.team1||''} ${m.team2||''}`.toLowerCase().includes(s)) &&
-        (v === 'All' || m.venue === v) && 
-        (f === 'All' || m.format === f) &&
-        (p === 'All' || m.pitchNo === p) &&
-        (t === 'All' || m.team1 === t || m.team2 === t)
-    );
-    updateStats(filtered); renderList(filtered);
+    const filtered = allMatches.filter(m => {
+        const matchStr = (`${m.leagueName||''} ${m.venue||''} Match ${m.matchNo||''} ${m.team1||''} ${m.team2||''}`).toLowerCase();
+        
+        // Match ANY of the expanded search terms
+        const matchesSearch = searchTerms.length === 0 || searchTerms.some(term => matchStr.includes(term));
+        
+        const matchesVenue = (v === 'All' || m.venue === v);
+        const matchesFormat = (f === 'All' || m.format === f);
+        const matchesPitch = (p === 'All' || m.pitchNo === p);
+        const matchesTeam = (t === 'All' || m.team1 === t || m.team2 === t);
+        
+        return matchesSearch && matchesVenue && matchesFormat && matchesPitch && matchesTeam;
+    });
+    
+    updateStats(filtered); 
+    renderList(filtered);
 }
 
 function updateStats(matches) {
