@@ -1,4 +1,4 @@
-import { db, auth } from "./firebase-config.js?v=15";
+import { db, auth } from "./firebase-config.js";
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -81,12 +81,7 @@ if(loginForm) {
 onSnapshot(query(collection(db, "matches"), orderBy("createdAt", "desc")), (snapshot) => {
     allMatches = [];
     snapshot.forEach((doc) => { allMatches.push({ id: doc.id, ...doc.data() }); });
-    try {
-        updateFilterOptions(); 
-        applyFiltersAndRender();
-    } catch(err) {
-        console.error("Render error: ", err);
-    }
+    try { applyFiltersAndRender(); } catch(err) {}
 });
 
 if(openModalBtn) {
@@ -128,18 +123,10 @@ if(matchForm) {
             pitchNo: document.getElementById('pitchNo').value.trim() || '-', 
             matchNo: document.getElementById('matchNo').value.trim() || '-',
             inn1: { 
-                runs: run1, 
-                wkts: parseInt(document.getElementById('inn1Wkts').value)||0, 
-                overs: parseFloat(document.getElementById('inn1Overs').value)||0, 
-                pacers: parseInt(document.getElementById('inn1Pacers').value)||0, 
-                spinners: parseInt(document.getElementById('inn1Spinners').value)||0 
+                runs: run1, wkts: parseInt(document.getElementById('inn1Wkts').value)||0, overs: parseFloat(document.getElementById('inn1Overs').value)||0, pacers: parseInt(document.getElementById('inn1Pacers').value)||0, spinners: parseInt(document.getElementById('inn1Spinners').value)||0 
             },
             inn2: { 
-                runs: run2, 
-                wkts: parseInt(document.getElementById('inn2Wkts').value)||0, 
-                overs: parseFloat(document.getElementById('inn2Overs').value)||0, 
-                pacers: parseInt(document.getElementById('inn2Pacers').value)||0, 
-                spinners: parseInt(document.getElementById('inn2Spinners').value)||0 
+                runs: run2, wkts: parseInt(document.getElementById('inn2Wkts').value)||0, overs: parseFloat(document.getElementById('inn2Overs').value)||0, pacers: parseInt(document.getElementById('inn2Pacers').value)||0, spinners: parseInt(document.getElementById('inn2Spinners').value)||0 
             },
             winner: winner,
         };
@@ -172,16 +159,12 @@ window.editMatch = (id) => {
 
 window.deleteMatch = async (id) => { if(confirm("Delete this match?")) await deleteDoc(doc(db, "matches", id)); };
 
+// SEARCH INPUT FOR MAIN BAR
 const searchInput = document.getElementById('searchInput');
-const filterVenue = document.getElementById('filterVenue');
-const filterFormat = document.getElementById('filterFormat');
-const filterPitch = document.getElementById('filterPitch');
-const filterTeam = document.getElementById('filterTeam');
-const filterLeague = document.getElementById('filterLeague');
+if(searchInput) searchInput.addEventListener('input', applyFiltersAndRender);
 
-[searchInput, filterVenue, filterFormat, filterPitch, filterTeam, filterLeague].forEach(el => {
-    if(el) el.addEventListener(el.tagName==='INPUT'?'input':'change', applyFiltersAndRender);
-});
+const filterFormat = document.getElementById('filterFormat');
+if(filterFormat) filterFormat.addEventListener('change', applyFiltersAndRender);
 
 // Edit & Delete Field Actions
 document.querySelectorAll('.edit-action').forEach(btn => {
@@ -225,12 +208,14 @@ async function renameFieldGlobally(fieldType, oldVal, newVal) {
             if (fieldType === 'leagueName') return m.leagueName === oldVal;
             if (fieldType === 'venue') return m.venue === oldVal;
             if (fieldType === 'team') return m.team1 === oldVal || m.team2 === oldVal;
+            if (fieldType === 'pitchNo') return m.pitchNo === oldVal;
             return false;
         });
         for (const m of matchesToUpdate) {
             let updatePayload = {};
             if (fieldType === 'leagueName') updatePayload.leagueName = newVal;
             if (fieldType === 'venue') updatePayload.venue = newVal;
+            if (fieldType === 'pitchNo') updatePayload.pitchNo = newVal;
             if (fieldType === 'team') {
                 if (m.team1 === oldVal) updatePayload.team1 = newVal;
                 if (m.team2 === oldVal) updatePayload.team2 = newVal;
@@ -246,12 +231,14 @@ async function deleteFieldGlobally(fieldType, val) {
             if (fieldType === 'leagueName') return m.leagueName === val;
             if (fieldType === 'venue') return m.venue === val;
             if (fieldType === 'team') return m.team1 === val || m.team2 === val;
+            if (fieldType === 'pitchNo') return m.pitchNo === val;
             return false;
         });
         for (const m of matchesToUpdate) {
             let updatePayload = {};
             if (fieldType === 'leagueName') updatePayload.leagueName = '-';
             if (fieldType === 'venue') updatePayload.venue = '-';
+            if (fieldType === 'pitchNo') updatePayload.pitchNo = '-';
             if (fieldType === 'team') {
                 if (m.team1 === val) updatePayload.team1 = '-';
                 if (m.team2 === val) updatePayload.team2 = '-';
@@ -261,26 +248,43 @@ async function deleteFieldGlobally(fieldType, val) {
     } catch(err) { alert("Failed to delete: " + err.message); }
 }
 
-function setupSmartDropdown(inputId, listId, dataExtractor) {
+// -------------------------------------------------------------
+// SMART DROPDOWNS FOR ADD MATCH & FILTER SECTION
+// -------------------------------------------------------------
+function setupSmartDropdown(inputId, listId, dataExtractor, isFilter = false) {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
     if(!input || !list) return;
     
     const renderList = (queryVal) => {
         let suggestions = [...new Set(allMatches.map(dataExtractor).flat().filter(item => 
-            item && item !== 'Unknown League' && item !== 'Unknown Venue' && item !== '-' && item !== 'Team 1' && item !== 'Team 2'
+            item && item !== 'Unknown League' && item !== 'Unknown Venue' && item !== '-' && item !== 'Team 1' && item !== 'Team 2' && item !== 'All Leagues...' && item !== 'All Teams...' && item !== 'All Venues...' && item !== 'All Pitches...'
         ))];
         
-        if (queryVal) {
+        if (queryVal && queryVal.toLowerCase() !== 'all') {
             const searchTerms = getExpandedSearchTerms(queryVal);
             suggestions = suggestions.filter(item => {
-                const itemLow = item.toLowerCase();
+                const itemLow = String(item).toLowerCase();
                 return searchTerms.some(term => itemLow.includes(term));
             });
         }
         
         list.innerHTML = '';
-        if (suggestions.length === 0) { list.style.display = 'none'; return; }
+        
+        if (isFilter) {
+            const liAll = document.createElement('li');
+            liAll.textContent = input.getAttribute('placeholder') || "All";
+            liAll.style.color = "var(--primary)";
+            liAll.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                input.value = '';
+                list.style.display = 'none';
+                applyFiltersAndRender();
+            });
+            list.appendChild(liAll);
+        }
+
+        if (suggestions.length === 0 && queryVal && !isFilter) { list.style.display = 'none'; return; }
         
         suggestions.forEach(item => {
             const li = document.createElement('li');
@@ -289,6 +293,7 @@ function setupSmartDropdown(inputId, listId, dataExtractor) {
                 e.preventDefault();
                 input.value = item;
                 list.style.display = 'none';
+                if(isFilter) applyFiltersAndRender();
             });
             list.appendChild(li);
         });
@@ -296,56 +301,44 @@ function setupSmartDropdown(inputId, listId, dataExtractor) {
     };
 
     input.addEventListener('focus', () => renderList(input.value.trim()));
-    input.addEventListener('input', () => renderList(input.value.trim()));
+    input.addEventListener('input', () => {
+        renderList(input.value.trim());
+        if(isFilter) applyFiltersAndRender();
+    });
     input.addEventListener('blur', () => { setTimeout(() => list.style.display = 'none', 200); });
 }
 
 setupSmartDropdown('leagueName', 'leagueList', m => m.leagueName);
 setupSmartDropdown('venue', 'venueList', m => m.venue);
+setupSmartDropdown('pitchNo', 'pitchNoList', m => m.pitchNo);
 setupSmartDropdown('team1', 'team1List', m => [m.team1, m.team2]);
 setupSmartDropdown('team2', 'team2List', m => [m.team1, m.team2]);
 
-function updateFilterOptions() {
-    const lVal = filterLeague?.value || 'All';
-    const vVal = filterVenue?.value || 'All';
-    const pVal = filterPitch?.value || 'All';
-    const tVal = filterTeam?.value || 'All';
-    
-    const leagues = [...new Set(allMatches.map(m => m.leagueName).filter(l => l && l !== 'Unknown League' && l !== '-'))];
-    const venues = [...new Set(allMatches.map(m => m.venue).filter(v => v && v !== 'Unknown Venue' && v !== '-'))];
-    const pitches = [...new Set(allMatches.map(m => m.pitchNo).filter(p => p && p !== '-'))];
-    const teams = [...new Set(allMatches.flatMap(m => [m.team1, m.team2]).filter(t => t && t !== 'Team 1' && t !== 'Team 2' && t !== '-'))];
-    
-    if(filterLeague) filterLeague.innerHTML = '<option value="All">All Leagues</option>' + leagues.map(l => `<option value="${l}">${l}</option>`).join('');
-    if(filterVenue) filterVenue.innerHTML = '<option value="All">All Venues</option>' + venues.map(v => `<option value="${v}">${v}</option>`).join('');
-    if(filterPitch) filterPitch.innerHTML = '<option value="All">All Pitches</option>' + pitches.map(p => `<option value="${p}">${p}</option>`).join('');
-    if(filterTeam) filterTeam.innerHTML = '<option value="All">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
-    
-    if (filterLeague && leagues.includes(lVal)) filterLeague.value = lVal;
-    if (filterVenue && venues.includes(vVal)) filterVenue.value = vVal;
-    if (filterPitch && pitches.includes(pVal)) filterPitch.value = pVal;
-    if (filterTeam && teams.includes(tVal)) filterTeam.value = tVal;
-}
+setupSmartDropdown('filterLeague', 'filterLeagueList', m => m.leagueName, true);
+setupSmartDropdown('filterVenue', 'filterVenueList', m => m.venue, true);
+setupSmartDropdown('filterTeam', 'filterTeamList', m => [m.team1, m.team2], true);
+setupSmartDropdown('filterPitch', 'filterPitchList', m => m.pitchNo, true);
 
 function applyFiltersAndRender() {
     const s = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const searchTerms = getExpandedSearchTerms(s);
     
-    const l = filterLeague?.value || 'All';
-    const v = filterVenue?.value || 'All';
+    const l = document.getElementById('filterLeague')?.value.toLowerCase().trim() || '';
+    const v = document.getElementById('filterVenue')?.value.toLowerCase().trim() || '';
     const f = document.getElementById('filterFormat')?.value || 'All';
-    const p = filterPitch?.value || 'All';
-    const t = filterTeam?.value || 'All';
+    const p = document.getElementById('filterPitch')?.value.toLowerCase().trim() || '';
+    const t = document.getElementById('filterTeam')?.value.toLowerCase().trim() || '';
     
     const filtered = allMatches.filter(m => {
         const matchStr = (`${m.leagueName||''} ${m.venue||''} Match ${m.matchNo||''} ${m.team1||''} ${m.team2||''}`).toLowerCase();
         
         const matchesSearch = searchTerms.length === 0 || searchTerms.some(term => matchStr.includes(term));
-        const matchesLeague = (l === 'All' || m.leagueName === l);
-        const matchesVenue = (v === 'All' || m.venue === v);
+        
+        const matchesLeague = (l === '' || String(m.leagueName || '').toLowerCase().includes(l));
+        const matchesVenue = (v === '' || String(m.venue || '').toLowerCase().includes(v));
         const matchesFormat = (f === 'All' || m.format === f);
-        const matchesPitch = (p === 'All' || m.pitchNo === p);
-        const matchesTeam = (t === 'All' || m.team1 === t || m.team2 === t);
+        const matchesPitch = (p === '' || String(m.pitchNo || '').toLowerCase() === p);
+        const matchesTeam = (t === '' || String(m.team1 || '').toLowerCase().includes(t) || String(m.team2 || '').toLowerCase().includes(t));
         
         return matchesSearch && matchesLeague && matchesVenue && matchesFormat && matchesPitch && matchesTeam;
     });
