@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PitchStats Pro</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- PWA Setup -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Changed theme-color to dark background so status bar matches app -->
+    <meta name="theme-color" content="#070a13">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <header class="top-nav">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="icon-192.png" alt="Logo" style="width: 24px; height: 24px; border-radius: 4px;">
+            <h1>PITCHSTATS PRO</h1>
+        </div>
+        <button id="authBtn" class="btn-outline">Admin Login</button>
+    </header>
+
+    <main class="container">
+        <!-- Search & Filter Card -->
+        <section class="card filter-card">
+            <div class="form-group full-width">
+                <label>🔍 Search (Team, League, Venue, Match No)</label>
+                <input type="text" id="searchInput" placeholder="Search matches...">
+            </div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📍 Filter Venue</label>
+                    <select id="filterVenue"><option value="All">All Venues</option></select>
+                </div>
+                <div class="form-group">
+                    <label>🔢 Pitch No.</label>
+                    <select id="filterPitch"><option value="All">All Pitches</option></select>
+                </div>
+            </div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>🏏 Filter Team</label>
+                    <select id="filterTeam"><option value="All">All Teams</option></select>
+                </div>
+                <div class="form-group">
+                    <label>⚙️ Format</label>
+                    <select id="filterFormat">
+                        <option value="All">All Formats</option>
+                        <option value="T20">T20</option>
+                        <option value="ODI">ODI</option>
+                        <option value="Test">Test</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Overview Cards -->
+        <section class="stats-grid">
+            <div class="stat-box"><span class="label">AVG 1ST INNS SCORE</span><span class="value green-txt" id="avg1stScore">0</span></div>
+            <div class="stat-box"><span class="label">AVG 2ND INNS SCORE</span><span class="value blue-txt" id="avg2ndScore">0</span></div>
+            <div class="stat-box"><span class="label">AVG 1ST INNS WKTS</span><span class="value orange-txt" id="avg1stWkts">0</span></div>
+            <div class="stat-box"><span class="label">AVG 2ND INNS WKTS</span><span class="value orange-txt" id="avg2ndWkts">0</span></div>
+            <div class="stat-box"><span class="label">AVG PACERS WKT</span><span class="value purple-txt" id="avgPacers">0</span></div>
+            <div class="stat-box"><span class="label">AVG SPINNERS WKT</span><span class="value purple-txt" id="avgSpinners">0</span></div>
+        </section>
+
+        <button type="button" class="btn-primary" id="openModalBtn" style="display: none;">+ Add Match Scorecard</button>
+
+        <section class="history-section">
+            <h2>SAVED SCORECARDS <span id="liveStatus" class="live-dot">🟢 Live</span></h2>
+            <div class="match-list" id="matchList">
+                <p class="empty-state">Loading real-time matches...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-card login-card">
+            <div class="modal-top">
+                <h3>Admin Login</h3>
+                <button type="button" class="modal-close" id="closeLoginBtn">&times;</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group full-width">
+                    <label>Email</label>
+                    <input type="email" id="adminEmail" required placeholder="admin@example.com">
+                </div>
+                <div class="form-group full-width" style="margin-top: 10px;">
+                    <label>Password</label>
+                    <input type="password" id="adminPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary submit-btn">Login</button>
+                <p class="error-text" id="loginError"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Match Modal -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal-card">
+            <div class="modal-top">
+                <h3 id="modalTitle">Add Match Scorecard</h3>
+                <button type="button" class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+
+            <form id="matchForm">
+                <div class="row-2">
+                    <div class="form-group"><label>League Type</label><select id="leagueType"><option>Domestic</option><option>International</option></select></div>
+                    <div class="form-group"><label>Format</label><select id="format"><option>T20</option><option>ODI</option><option>Test</option></select></div>
+                </div>
+                <div class="form-group full-width"><label>League / Series Name</label><input type="text" id="leagueName" placeholder="e.g. IPL 2026" required></div>
+                
+                <div class="row-2">
+                    <div class="form-group"><label>Team 1 (Bat First)</label><input type="text" id="team1" placeholder="e.g. MI" required></div>
+                    <div class="form-group"><label>Team 2 (Chase)</label><input type="text" id="team2" placeholder="e.g. CSK" required></div>
+                </div>
+
+                <div class="row-2">
+                    <div class="form-group"><label>Venue / Stadium</label><input type="text" id="venue" placeholder="e.g. Wankhede" required></div>
+                    <div class="form-group">
+                        <label>Pitch No. & Match No.</label>
+                        <div class="inline-inputs"><input type="text" id="pitchNo" placeholder="Pitch 4" required><input type="number" id="matchNo" placeholder="Match #" required></div>
+                    </div>
+                </div>
+
+                <div class="form-divider"><span>1st Innings</span></div>
+                <div class="row-3">
+                    <div class="form-group"><label>Runs</label><input type="number" id="inn1Runs" required></div>
+                    <div class="form-group"><label>Wickets</label><input type="number" id="inn1Wkts" min="0" max="10" required></div>
+                    <div class="form-group"><label>Overs</label><input type="number" step="0.1" id="inn1Overs" required></div>
+                </div>
+                <div class="row-2">
+                    <div class="form-group"><label>Pacers Wkts</label><input type="number" id="inn1Pacers" min="0" max="10" required></div>
+                    <div class="form-group"><label>Spinners Wkts</label><input type="number" id="inn1Spinners" min="0" max="10" required></div>
+                </div>
+
+                <div class="form-divider"><span>2nd Innings</span></div>
+                <div class="row-3">
+                    <div class="form-group"><label>Runs</label><input type="number" id="inn2Runs" required></div>
+                    <div class="form-group"><label>Wickets</label><input type="number" id="inn2Wkts" min="0" max="10" required></div>
+                    <div class="form-group"><label>Overs</label><input type="number" step="0.1" id="inn2Overs" required></div>
+                </div>
+                <div class="row-2">
+                    <div class="form-group"><label>Pacers Wkts</label><input type="number" id="inn2Pacers" min="0" max="10" required></div>
+                    <div class="form-group"><label>Spinners Wkts</label><input type="number" id="inn2Spinners" min="0" max="10" required></div>
+                </div>
+
+                <button type="submit" class="btn-primary submit-btn" id="saveMatchBtn">Save Scorecard</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+        }
+    </script>
+</body>
+</html>
