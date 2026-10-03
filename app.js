@@ -7,6 +7,10 @@ const addModal = document.getElementById('addModal'), loginModal = document.getE
 const matchForm = document.getElementById('matchForm'), loginForm = document.getElementById('loginForm');
 const authBtn = document.getElementById('authBtn'), openModalBtn = document.getElementById('openModalBtn');
 
+// SVG Icons for modern look
+const editSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+const trashSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+
 // -------------------------------------------------------------
 // SMART DICTIONARY (ALIAS MAPPING)
 // -------------------------------------------------------------
@@ -160,7 +164,7 @@ const filterTeam = document.getElementById('filterTeam');
     el.addEventListener(el.tagName==='INPUT'?'input':'change', applyFiltersAndRender)
 );
 
-// Smart Dropdown / Searchable Select with Edit/Delete
+// Smart Dropdown / Searchable Select with Edit/Delete SVG Icons
 function setupSmartDropdown(inputId, listId, fieldType, dataExtractor) {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
@@ -201,7 +205,7 @@ function setupSmartDropdown(inputId, listId, fieldType, dataExtractor) {
                 const editBtn = document.createElement('button');
                 editBtn.type = 'button';
                 editBtn.className = 'btn-item-action';
-                editBtn.textContent = '✏️';
+                editBtn.innerHTML = editSvg;
                 editBtn.title = 'Rename in all matches';
                 editBtn.addEventListener('mousedown', async (e) => {
                     e.preventDefault();
@@ -215,7 +219,7 @@ function setupSmartDropdown(inputId, listId, fieldType, dataExtractor) {
                 const delBtn = document.createElement('button');
                 delBtn.type = 'button';
                 delBtn.className = 'btn-item-action del';
-                delBtn.textContent = '🗑️';
+                delBtn.innerHTML = trashSvg;
                 delBtn.title = 'Remove from matches';
                 delBtn.addEventListener('mousedown', async (e) => {
                     e.preventDefault();
@@ -391,7 +395,8 @@ function renderList(matches) {
             <div class="match-scores"><div>1st: ${m.inn1?.runs}/${m.inn1?.wkts} (${m.inn1?.overs} ov)</div><div>2nd: ${m.inn2?.runs}/${m.inn2?.wkts} (${m.inn2?.overs} ov)</div></div>
             <div class="match-footer">🏆 ${m.winner||'Result Decided'}</div>
             <div class="admin-actions" style="display: ${isAdmin ? 'flex' : 'none'};">
-                <button class="btn-edit" onclick="editMatch('${m.id}')">✏️ Edit</button><button class="btn-delete" onclick="deleteMatch('${m.id}')">🗑️ Delete</button>
+                <button class="btn-edit" onclick="editMatch('${m.id}')">${editSvg} Edit</button>
+                <button class="btn-delete" onclick="deleteMatch('${m.id}')">${trashSvg} Delete</button>
             </div>
         </div>
     `;
