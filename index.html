@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PitchStats Pro</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- PWA Setup -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -54,14 +52,19 @@
             </div>
         </section>
 
-        <!-- Stats Overview Cards -->
+        <!-- Stats Overview Cards (Updated to show 1st/2nd Innings Pacer & Spinner Avgs) -->
         <section class="stats-grid">
             <div class="stat-box"><span class="label">AVG 1ST INNS SCORE</span><span class="value main-color-txt" id="avg1stScore">0</span></div>
             <div class="stat-box"><span class="label">AVG 2ND INNS SCORE</span><span class="value cyan-txt" id="avg2ndScore">0</span></div>
+            
             <div class="stat-box"><span class="label">AVG 1ST INNS WKTS</span><span class="value orange-txt" id="avg1stWkts">0</span></div>
             <div class="stat-box"><span class="label">AVG 2ND INNS WKTS</span><span class="value orange-txt" id="avg2ndWkts">0</span></div>
-            <div class="stat-box"><span class="label">AVG PACERS WKT</span><span class="value purple-txt" id="avgPacers">0</span></div>
-            <div class="stat-box"><span class="label">AVG SPINNERS WKT</span><span class="value purple-txt" id="avgSpinners">0</span></div>
+            
+            <div class="stat-box"><span class="label">1ST INN PACERS WKT</span><span class="value purple-txt" id="avg1stPacers">0</span></div>
+            <div class="stat-box"><span class="label">1ST INN SPINNERS WKT</span><span class="value purple-txt" id="avg1stSpinners">0</span></div>
+            
+            <div class="stat-box"><span class="label">2ND INN PACERS WKT</span><span class="value purple-txt" id="avg2ndPacers">0</span></div>
+            <div class="stat-box"><span class="label">2ND INN SPINNERS WKT</span><span class="value purple-txt" id="avg2ndSpinners">0</span></div>
         </section>
 
         <button type="button" class="btn-primary" id="openModalBtn" style="display: none;">+ Add Match Scorecard</button>
@@ -73,11 +76,6 @@
             </div>
         </section>
     </main>
-
-    <!-- Datalists for Suggestions -->
-    <datalist id="leagueSuggestions"></datalist>
-    <datalist id="teamSuggestions"></datalist>
-    <datalist id="venueSuggestions"></datalist>
 
     <!-- Login Modal -->
     <div class="modal-overlay" id="loginModal">
@@ -101,7 +99,7 @@
         </div>
     </div>
 
-    <!-- Add/Edit Match Modal -->
+    <!-- Add/Edit Match Modal (With Custom Autocomplete Dropdowns) -->
     <div class="modal-overlay" id="addModal">
         <div class="modal-card">
             <div class="modal-top">
@@ -115,26 +113,30 @@
                     <div class="form-group"><label>Format</label><select id="format"><option>T20</option><option>ODI</option><option>Test</option></select></div>
                 </div>
                 
-                <div class="form-group full-width">
+                <div class="form-group full-width autocomplete-container">
                     <label>League / Series Name</label>
-                    <input type="text" id="leagueName" list="leagueSuggestions" placeholder="e.g. IPL 2026" required autocomplete="off">
+                    <input type="text" id="leagueName" placeholder="e.g. IPL 2026" required autocomplete="off">
+                    <ul class="autocomplete-list" id="leagueList"></ul>
                 </div>
                 
                 <div class="row-2">
-                    <div class="form-group">
+                    <div class="form-group autocomplete-container">
                         <label>Team 1 (Bat First)</label>
-                        <input type="text" id="team1" list="teamSuggestions" placeholder="e.g. MI" required autocomplete="off">
+                        <input type="text" id="team1" placeholder="e.g. MI" required autocomplete="off">
+                        <ul class="autocomplete-list" id="team1List"></ul>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group autocomplete-container">
                         <label>Team 2 (Chase)</label>
-                        <input type="text" id="team2" list="teamSuggestions" placeholder="e.g. CSK" required autocomplete="off">
+                        <input type="text" id="team2" placeholder="e.g. CSK" required autocomplete="off">
+                        <ul class="autocomplete-list" id="team2List"></ul>
                     </div>
                 </div>
 
                 <div class="row-2">
-                    <div class="form-group">
+                    <div class="form-group autocomplete-container">
                         <label>Venue / Stadium</label>
-                        <input type="text" id="venue" list="venueSuggestions" placeholder="e.g. Wankhede" required autocomplete="off">
+                        <input type="text" id="venue" placeholder="e.g. Wankhede" required autocomplete="off">
+                        <ul class="autocomplete-list" id="venueList"></ul>
                     </div>
                     <div class="form-group">
                         <label>Pitch No. & Match No.</label>

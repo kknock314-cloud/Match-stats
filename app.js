@@ -30,7 +30,6 @@ onSnapshot(query(collection(db, "matches"), orderBy("createdAt", "desc")), (snap
     allMatches = [];
     snapshot.forEach((doc) => { allMatches.push({ id: doc.id, ...doc.data() }); });
     updateFilterOptions(); 
-    updateSuggestions(); 
     applyFiltersAndRender();
 });
 
@@ -102,16 +101,6 @@ const filterTeam = document.getElementById('filterTeam');
     el.addEventListener(el.tagName==='INPUT'?'input':'change', applyFiltersAndRender)
 );
 
-function updateSuggestions() {
-    const leagues = [...new Set(allMatches.map(m => m.leagueName).filter(Boolean))];
-    const teams = [...new Set(allMatches.flatMap(m => [m.team1, m.team2]).filter(Boolean))];
-    const venues = [...new Set(allMatches.map(m => m.venue).filter(Boolean))];
-
-    document.getElementById('leagueSuggestions').innerHTML = leagues.map(l => `<option value="${l}">`).join('');
-    document.getElementById('teamSuggestions').innerHTML = teams.map(t => `<option value="${t}">`).join('');
-    document.getElementById('venueSuggestions').innerHTML = venues.map(v => `<option value="${v}">`).join('');
-}
-
 function updateFilterOptions() {
     const vVal = filterVenue.value, pVal = filterPitch.value, tVal = filterTeam.value;
     
@@ -143,12 +132,32 @@ function applyFiltersAndRender() {
 }
 
 function updateStats(matches) {
-    let t = matches.length, r1=0, r2=0, w1=0, w2=0, pacers=0, spinners=0;
-    if (t === 0) return ['avg1stScore','avg2ndScore','avg1stWkts','avg2ndWkts','avgPacers','avgSpinners'].forEach(id => document.getElementById(id).textContent = '0');
-    matches.forEach(m => { r1+=m.inn1?.runs||0; r2+=m.inn2?.runs||0; w1+=m.inn1?.wkts||0; w2+=m.inn2?.wkts||0; pacers+=(m.inn1?.pacers||0)+(m.inn2?.pacers||0); spinners+=(m.inn1?.spinners||0)+(m.inn2?.spinners||0); });
-    document.getElementById('avg1stScore').textContent = Math.round(r1/t); document.getElementById('avg2ndScore').textContent = Math.round(r2/t);
-    document.getElementById('avg1stWkts').textContent = (w1/t).toFixed(1); document.getElementById('avg2ndWkts').textContent = (w2/t).toFixed(1);
-    document.getElementById('avgPacers').textContent = (pacers/t).toFixed(1); document.getElementById('avgSpinners').textContent = (spinners/t).toFixed(1);
+    let t = matches.length;
+    let r1=0, r2=0, w1=0, w2=0, p1=0, s1=0, p2=0, s2=0;
+    
+    if (t === 0) {
+        ['avg1stScore','avg2ndScore','avg1stWkts','avg2ndWkts','avg1stPacers','avg1stSpinners','avg2ndPacers','avg2ndSpinners']
+            .forEach(id => document.getElementById(id).textContent = '0');
+        return;
+    }
+    
+    matches.forEach(m => { 
+        r1+=m.inn1?.runs||0; r2+=m.inn2?.runs||0; 
+        w1+=m.inn1?.wkts||0; w2+=m.inn2?.wkts||0; 
+        p1+=(m.inn1?.pacers||0); s1+=(m.inn1?.spinners||0);
+        p2+=(m.inn2?.pacers||0); s2+=(m.inn2?.spinners||0);
+    });
+    
+    document.getElementById('avg1stScore').textContent = Math.round(r1/t); 
+    document.getElementById('avg2ndScore').textContent = Math.round(r2/t);
+    document.getElementById('avg1stWkts').textContent = (w1/t).toFixed(1); 
+    document.getElementById('avg2ndWkts').textContent = (w2/t).toFixed(1);
+    
+    // Updated Individual Innings Bowling Stats
+    document.getElementById('avg1stPacers').textContent = (p1/t).toFixed(1); 
+    document.getElementById('avg1stSpinners').textContent = (s1/t).toFixed(1);
+    document.getElementById('avg2ndPacers').textContent = (p2/t).toFixed(1); 
+    document.getElementById('avg2ndSpinners').textContent = (s2/t).toFixed(1);
 }
 
 function renderList(matches) {
@@ -171,3 +180,47 @@ function renderList(matches) {
         </div>
     `).join('');
 }
+
+// -------------------------------------------------------------
+// Custom Autocomplete Logic for Forms
+// -------------------------------------------------------------
+function setupAutocomplete(inputId, listId, dataExtractor) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+    
+    input.addEventListener('input', function() {
+        const val = this.value.toLowerCase().trim();
+        list.innerHTML = '';
+        if (!val) { list.style.display = 'none'; return; }
+        
+        // Extract unique data from allMatches
+        let suggestions = [...new Set(allMatches.map(dataExtractor).flat().filter(Boolean))];
+        
+        // Filter based on input
+        suggestions = suggestions.filter(item => item.toLowerCase().includes(val));
+        
+        if (suggestions.length === 0) { list.style.display = 'none'; return; }
+        
+        suggestions.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            li.addEventListener('click', () => {
+                input.value = item;
+                list.style.display = 'none';
+            });
+            list.appendChild(li);
+        });
+        list.style.display = 'block';
+    });
+    
+    // Hide list when clicking outside
+    document.addEventListener('click', (e) => {
+        if (e.target !== input && e.target !== list) list.style.display = 'none';
+    });
+}
+
+// Initialize Autocomplete for specific fields
+setupAutocomplete('leagueName', 'leagueList', m => m.leagueName);
+setupAutocomplete('venue', 'venueList', m => m.venue);
+setupAutocomplete('team1', 'team1List', m => [m.team1, m.team2]);
+setupAutocomplete('team2', 'team2List', m => [m.team1, m.team2]);
