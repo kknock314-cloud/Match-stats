@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PitchStats Pro</title>
+    <meta name="theme-color" content="#121212">
+    
+    <style>
+        /* Carbon Black & Blue Theme Variables */
+        :root {
+            --bg-dark: #121212; --card-bg: #1e1e1e; --input-bg: #0a0a0a;
+            --primary: #3b82f6; --primary-hover: #2563eb; --border-color: #333333;
+            --text-primary: #f8fafc; --text-muted: #9ca3af;
+            --cyan: #0ea5e9; --orange: #f59e0b; --purple: #a855f7; --danger: #ef4444;
+            --green: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-dark); color: var(--text-primary); width: 100%; min-height: 100vh; overflow-x: hidden; padding-bottom: 30px; }
+        .top-nav { padding: 16px 20px; background: var(--bg-dark); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+        .top-nav h1 { font-size: 20px; color: var(--primary); font-weight: 700; letter-spacing: 1px;}
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-outline:hover { background: rgba(59, 130, 246, 0.1); }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
+        .full-width { width: 100%; }
+        .form-group label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;}
+        input, select { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 14px; outline: none; }
+        input:focus, select:focus { border-color: var(--primary); }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+        .inline-inputs { display: flex; gap: 8px; width: 100%; } .inline-inputs input { flex: 1; min-width: 0; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
+        .stat-box .label { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+        .stat-box .value { font-size: 24px; font-weight: 800; }
+        .main-color-txt { color: var(--primary); } .cyan-txt { color: var(--cyan); } .orange-txt { color: var(--orange); } .purple-txt { color: var(--purple); } .green-txt { color: var(--green); }
+        .btn-primary { width: 100%; background: var(--primary); color: #fff; border: none; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);}
+        .submit-btn { margin-top: 16px; }
+
+        /* History Section */
+        .history-section h2 { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;}
+        .live-dot { color: var(--primary); font-size: 10px; background: rgba(59, 130, 246, 0.15); padding: 2px 8px; border-radius: 10px; animation: pulse 2s infinite; border: 1px solid rgba(59, 130, 246, 0.3);}
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .match-list { display: flex; flex-direction: column; gap: 10px; }
+        .hidden-layer { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .btn-toggle { background: var(--card-bg); border: 1px dashed var(--primary); color: var(--primary); padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; transition: 0.3s; margin-top: 10px; }
+        .btn-toggle:hover { background: rgba(59, 130, 246, 0.1); }
+
+        .match-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; position: relative;}
+        .match-card-header { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-primary); margin-bottom: 4px; }
+        .match-card-sub { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+        .match-scores { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+        .match-footer { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border-color); font-size: 12px; color: var(--primary); font-weight: 600; text-align: center; }
+        .admin-actions { display: none; justify-content: space-between; margin-top: 10px; gap: 10px;}
+        .btn-edit, .btn-delete { flex: 1; padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; transition: all 0.2s; }
+        .btn-edit { background: #262626; color: white; border: 1px solid var(--border-color); }
+        .btn-edit:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-delete { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-delete:hover { background: rgba(239, 68, 68, 0.2); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 9999; padding: 12px; box-sizing: border-box; align-items: center; justify-content: center; }
+        .modal-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; width: 100%; max-width: 460px; max-height: 92vh; overflow-y: auto; padding: 16px; box-sizing: border-box; }
+        .login-card { max-width: 320px; }
+        .modal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+        .modal-top h3 { font-size: 16px; color: var(--primary); }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
+        .form-divider { display: flex; align-items: center; margin: 14px 0 6px 0; }
+        .form-divider span { font-size: 12px; font-weight: 700; color: var(--primary); background: #121212; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
+        .error-text { color: var(--danger); font-size: 12px; text-align: center; margin-top: 10px; }
+
+        /* Custom Searchable Select Styling */
+        .autocomplete-container { position: relative; }
+        .input-wrapper { position: relative; width: 100%; display: flex; align-items: center; }
+        .input-wrapper::after { content: '▼'; position: absolute; right: 12px; color: var(--text-muted); font-size: 10px; pointer-events: none; }
+        .input-wrapper input { padding-right: 30px; width: 100%; cursor: text; }
+        .autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); z-index: 999; max-height: 200px; overflow-y: auto; border-radius: 8px; display: none; list-style: none; padding: 0; margin: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.8); }
+
+        .autocomplete-list li { 
+            padding: 12px 14px; 
+            cursor: pointer; 
+            color: var(--text-primary); 
+            font-size: 14px; 
+            border-bottom: 1px solid var(--border-color);
+        }
+        .autocomplete-list li:last-child { border-bottom: none; }
+        .autocomplete-list li:hover { background: rgba(59, 130, 246, 0.15); }
+        input::-webkit-calendar-picker-indicator { display: none !important; }
+
+        /* Label Row with Action Buttons */
+        .label-row { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 4px; }
+        .field-actions { display: flex; gap: 6px; }
+        .btn-label { 
+            background: transparent; border: 1px solid var(--border-color); 
+            color: var(--text-muted); font-size: 10px; padding: 3px 8px; 
+            border-radius: 4px; cursor: pointer; text-transform: uppercase; 
+            font-weight: 700; transition: all 0.2s;
+        }
+        .btn-label.edit-action:hover { color: var(--primary); border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+        .btn-label.del-action:hover { color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        
+        .circle-logo {
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            border: 1px solid var(--primary);
+            background-color: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <header class="top-nav">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="circle-logo">Ps</div>
+            <h1>PITCHSTATS PRO</h1>
+        </div>
+        <button id="authBtn" class="btn-outline">Admin Login</button>
+    </header>
+
+    <main class="container">
+        <!-- Search & Filter Card -->
+        <section class="card filter-card">
+            <div class="form-group full-width">
+                <label>🔍 Search (Team, League, Venue, Match No)</label>
+                <input type="text" id="searchInput" placeholder="Search matches...">
+            </div>
+            
+            <!-- NEW: League Filter added here -->
+            <div class="row-2">
+                <div class="form-group">
+                    <label>🏆 League / Series</label>
+                    <select id="filterLeague"><option value="All">All Leagues</option></select>
+                </div>
+                <div class="form-group">
+                    <label>⚙️ Format</label>
+                    <select id="filterFormat">
+                        <option value="All">All Formats</option>
+                        <option value="T20">T20</option>
+                        <option value="ODI">ODI</option>
+                        <option value="Test">Test</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row-2">
+                <div class="form-group">
+                    <label>🏏 Filter Team</label>
+                    <select id="filterTeam"><option value="All">All Teams</option></select>
+                </div>
+                <div class="form-group">
+                    <label>📍 Filter Venue</label>
+                    <select id="filterVenue"><option value="All">All Venues</option></select>
+                </div>
+            </div>
+            
+            <div class="form-group full-width" style="margin-top: 10px;">
+                <label>🔢 Pitch No.</label>
+                <select id="filterPitch"><option value="All">All Pitches</option></select>
+            </div>
+        </section>
+
+        <!-- Stats Overview Cards -->
+        <section class="stats-grid">
+            <div class="stat-box"><span class="label">1ST BAT WIN %</span><span class="value green-txt" id="win1stPct">0%</span></div>
+            <div class="stat-box"><span class="label">2ND BAT (CHASE) WIN %</span><span class="value cyan-txt" id="win2ndPct">0%</span></div>
+            
+            <div class="stat-box"><span class="label">AVG 1ST INNS SCORE</span><span class="value main-color-txt" id="avg1stScore">0</span></div>
+            <div class="stat-box"><span class="label">AVG 2ND INNS SCORE</span><span class="value cyan-txt" id="avg2ndScore">0</span></div>
+            
+            <div class="stat-box"><span class="label">AVG 1ST INNS WKTS</span><span class="value orange-txt" id="avg1stWkts">0</span></div>
+            <div class="stat-box"><span class="label">AVG 2ND INNS WKTS</span><span class="value orange-txt" id="avg2ndWkts">0</span></div>
+            
+            <div class="stat-box"><span class="label">1ST INN PACERS WKT</span><span class="value purple-txt" id="avg1stPacers">0</span></div>
+            <div class="stat-box"><span class="label">1ST INN SPINNERS WKT</span><span class="value purple-txt" id="avg1stSpinners">0</span></div>
+            
+            <div class="stat-box"><span class="label">2ND INN PACERS WKT</span><span class="value purple-txt" id="avg2ndPacers">0</span></div>
+            <div class="stat-box"><span class="label">2ND INN SPINNERS WKT</span><span class="value purple-txt" id="avg2ndSpinners">0</span></div>
+        </section>
+
+        <button type="button" class="btn-primary" id="openModalBtn" style="display: none;">+ Add Match Scorecard</button>
+
+        <section class="history-section">
+            <h2>SAVED SCORECARDS <span id="liveStatus" class="live-dot">🔵 Live</span></h2>
+            <div class="match-list" id="matchList">
+                <p class="empty-state">Loading real-time matches...</p>
+            </div>
+            <button type="button" id="toggleHistoryBtn" class="btn-toggle" style="display: none;">Show All Matches ⬇️</button>
+        </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-card login-card">
+            <div class="modal-top">
+                <h3>Admin Login</h3>
+                <button type="button" class="modal-close" id="closeLoginBtn">&times;</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group full-width">
+                    <label>Email</label>
+                    <input type="email" id="adminEmail" required placeholder="admin@example.com">
+                </div>
+                <div class="form-group full-width" style="margin-top: 10px;">
+                    <label>Password</label>
+                    <input type="password" id="adminPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary submit-btn">Login</button>
+                <p class="error-text" id="loginError"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Match Modal -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal-card">
+            <div class="modal-top">
+                <h3 id="modalTitle">Add Match Scorecard</h3>
+                <button type="button" class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+
+            <form id="matchForm">
+                <div class="row-2">
+                    <div class="form-group"><label>League Type</label><select id="leagueType"><option>Domestic</option><option>International</option></select></div>
+                    <div class="form-group"><label>Format</label><select id="format"><option>T20</option><option>ODI</option><option>Test</option></select></div>
+                </div>
+                
+                <div class="form-group full-width autocomplete-container">
+                    <div class="label-row">
+                        <label>League / Series Name</label>
+                        <div class="field-actions admin-only" style="display:none;">
+                            <button type="button" class="btn-label edit-action" data-target="leagueName" data-type="leagueName">Edit</button>
+                            <button type="button" class="btn-label del-action" data-target="leagueName" data-type="leagueName">Delete</button>
+                        </div>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="text" id="leagueName" placeholder="Select or type new league..." autocomplete="off">
+                    </div>
+                    <ul class="autocomplete-list" id="leagueList"></ul>
+                </div>
+                
+                <div class="row-2">
+                    <div class="form-group autocomplete-container">
+                        <div class="label-row">
+                            <label>Team 1 (Bat First)</label>
+                            <div class="field-actions admin-only" style="display:none;">
+                                <button type="button" class="btn-label edit-action" data-target="team1" data-type="team">Edit</button>
+                                <button type="button" class="btn-label del-action" data-target="team1" data-type="team">Delete</button>
+                            </div>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="text" id="team1" placeholder="Select or type..." autocomplete="off">
+                        </div>
+                        <ul class="autocomplete-list" id="team1List"></ul>
+                    </div>
+                    <div class="form-group autocomplete-container">
+                        <div class="label-row">
+                            <label>Team 2 (Chase)</label>
+                            <div class="field-actions admin-only" style="display:none;">
+                                <button type="button" class="btn-label edit-action" data-target="team2" data-type="team">Edit</button>
+                                <button type="button" class="btn-label del-action" data-target="team2" data-type="team">Delete</button>
+                            </div>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="text" id="team2" placeholder="Select or type..." autocomplete="off">
+                        </div>
+                        <ul class="autocomplete-list" id="team2List"></ul>
+                    </div>
+                </div>
+
+                <div class="row-2">
+                    <div class="form-group autocomplete-container">
+                        <div class="label-row">
+                            <label>Venue / Stadium</label>
+                            <div class="field-actions admin-only" style="display:none;">
+                                <button type="button" class="btn-label edit-action" data-target="venue" data-type="venue">Edit</button>
+                                <button type="button" class="btn-label del-action" data-target="venue" data-type="venue">Delete</button>
+                            </div>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="text" id="venue" placeholder="Select or type..." autocomplete="off">
+                        </div>
+                        <ul class="autocomplete-list" id="venueList"></ul>
+                    </div>
+                    <div class="form-group">
+                        <label>Pitch No. & Match No.</label>
+                        <div class="inline-inputs">
+                            <input type="text" id="pitchNo" placeholder="Pitch 4" autocomplete="off">
+                            <input type="number" id="matchNo" placeholder="Match #" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-divider"><span>1st Innings</span></div>
+                <div class="row-3">
+                 
