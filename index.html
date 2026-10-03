@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PitchStats Pro</title>
+    <!-- CACHE BUSTING V16 -->
+    <style>/* Carbon Black & Blue Theme Variables */
+:root {
+    --bg-dark: #121212; --card-bg: #1e1e1e; --input-bg: #0a0a0a;
+    --primary: #3b82f6; --primary-hover: #2563eb; --border-color: #333333;
+    --text-primary: #f8fafc; --text-muted: #9ca3af;
+    --cyan: #0ea5e9; --orange: #f59e0b; --purple: #a855f7; --danger: #ef4444;
+    --green: #10b981;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-tap-highlight-color: transparent; }
+body { background-color: var(--bg-dark); color: var(--text-primary); width: 100%; min-height: 100vh; overflow-x: hidden; padding-bottom: 30px; }
+.top-nav { padding: 16px 20px; background: var(--bg-dark); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+.top-nav h1 { font-size: 20px; color: var(--primary); font-weight: 700; letter-spacing: 1px;}
+.btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+.btn-outline:hover { background: rgba(59, 130, 246, 0.1); }
+.container { width: 100%; max-width: 600px; margin: 0 auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
+.full-width { width: 100%; }
+.form-group label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;}
+input, select { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 14px; outline: none; }
+input:focus, select:focus { border-color: var(--primary); }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.inline-inputs { display: flex; gap: 8px; width: 100%; } .inline-inputs input { flex: 1; min-width: 0; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
+.stat-box .label { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+.stat-box .value { font-size: 24px; font-weight: 800; }
+.main-color-txt { color: var(--primary); } .cyan-txt { color: var(--cyan); } .orange-txt { color: var(--orange); } .purple-txt { color: var(--purple); } .green-txt { color: var(--green); }
+.btn-primary { width: 100%; background: var(--primary); color: #fff; border: none; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);}
+.submit-btn { margin-top: 16px; }
+
+/* History Section */
+.history-section h2 { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;}
+.live-dot { color: var(--primary); font-size: 10px; background: rgba(59, 130, 246, 0.15); padding: 2px 8px; border-radius: 10px; animation: pulse 2s infinite; border: 1px solid rgba(59, 130, 246, 0.3);}
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+.match-list { display: flex; flex-direction: column; gap: 10px; }
+.hidden-layer { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
+.btn-toggle { background: var(--card-bg); border: 1px dashed var(--primary); color: var(--primary); padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; transition: 0.3s; margin-top: 10px; }
+.btn-toggle:hover { background: rgba(59, 130, 246, 0.1); }
+
+.match-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; position: relative;}
+.match-card-header { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-primary); margin-bottom: 4px; }
+.match-card-sub { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+.match-scores { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+.match-footer { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border-color); font-size: 12px; color: var(--primary); font-weight: 600; text-align: center; }
+.admin-actions { display: none; justify-content: space-between; margin-top: 10px; gap: 10px;}
+.btn-edit, .btn-delete { flex: 1; padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; transition: all 0.2s; }
+.btn-edit { background: #262626; color: white; border: 1px solid var(--border-color); }
+.btn-edit:hover { border-color: var(--primary); color: var(--primary); }
+.btn-delete { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+.btn-delete:hover { background: rgba(239, 68, 68, 0.2); }
+
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 9999; padding: 12px; box-sizing: border-box; align-items: center; justify-content: center; }
+.modal-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; width: 100%; max-width: 460px; max-height: 92vh; overflow-y: auto; padding: 16px; box-sizing: border-box; }
+.login-card { max-width: 320px; }
+.modal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+.modal-top h3 { font-size: 16px; color: var(--primary); }
+.modal-close { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
+.form-divider { display: flex; align-items: center; margin: 14px 0 6px 0; }
+.form-divider span { font-size: 12px; font-weight: 700; color: var(--primary); background: #121212; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
+.error-text { color: var(--danger); font-size: 12px; text-align: center; margin-top: 10px; }
+
+/* Custom Searchable Select Styling */
+.autocomplete-container { position: relative; }
+.input-wrapper { position: relative; width: 100%; display: flex; align-items: center; }
+.input-wrapper::after { content: '▼'; position: absolute; right: 12px; color: var(--text-muted); font-size: 10px; pointer-events: none; }
+.input-wrapper input { padding-right: 30px; width: 100%; cursor: text; }
+
+/* ADJUSTED MAX-HEIGHT TO ONLY SHOW ~4 ITEMS AND SCROLL */
+.autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); z-index: 999; max-height: 160px; overflow-y: auto; border-radius: 8px; display: none; list-style: none; padding: 0; margin: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.8); }
+
+.autocomplete-list li { 
+    padding: 12px 14px; 
+    cursor: pointer; 
+    color: var(--text-primary); 
+    font-size: 14px; 
+    border-bottom: 1px solid var(--border-color);
+}
+.autocomplete-list li:last-child { border-bottom: none; }
+.autocomplete-list li:hover { background: rgba(59, 130, 246, 0.15); }
+input::-webkit-calendar-picker-indicator { display: none !important; }
+
+/* Label Row with Action Buttons */
+.label-row { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 4px; }
+.field-actions { display: flex; gap: 6px; }
+.btn-label { 
+    background: transparent; border: 1px solid var(--border-color); 
+    color: var(--text-muted); font-size: 10px; padding: 3px 8px; 
+    border-radius: 4px; cursor: pointer; text-transform: uppercase; 
+    font-weight: 700; transition: all 0.2s;
+}
+.btn-label.edit-action:hover { color: var(--primary); border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+.btn-label.del-action:hover { color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+</style>
+    
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <header class="top-nav">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="data:image/png;base64,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" alt="Logo" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #3b82f6;">
+            <h1>PITCHSTATS PRO</h1>
+        </div>
+        <button id="authBtn" class="btn-outline">Admin Login</button>
+    </header>
+
+    <main class="container">
+        <!-- Search & Filter Card -->
+        <section class="card filter-card">
+            <div class="form-group full-width">
+                <label>🔍 Search (Team, League, Venue, Match No)</label>
+                <input type="text" id="searchInput" placeholder="Search matches...">
+            </div>
+            
+            <div class="row-2">
+                <div class="form-group autocomplete-container">
+                    <label>🏆 League / Series</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="filterLeague" placeholder="All Leagues..." autocomplete="off">
+                    </div>
+                    <ul class="autocomplete-list" id="filterLeagueList"></ul>
+                </div>
+                <div class="form-group">
+                    <label>⚙️ Format</label>
+                    <select id="filterFormat">
+                        <option value="All">All Formats</option>
+                        <option value="T20">T20</option>
+                        <option value="ODI">ODI</option>
+                        <option value="Test">Test</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row-2">
+                <div class="form-group autocomplete-container">
+                    <label>🏏 Filter Team</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="filterTeam" placeholder="All Teams..." autocomplete="off">
+                    </div>
+                    <ul class="autocomplete-list" id="filterTeamList"></ul>
+                </div>
+                <div class="form-group autocomplete-container">
+                    <label>📍 Filter Venue</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="filterVenue" placeholder="All Venues..." autocomplete="off">
+                    </div>
+                    <ul class="autocomplete-list" id="filterVenueList"></ul>
+                </div>
+            </div>
+            
+            <div class="form-group full-width autocomplete-container" style="margin-top: 10px;">
+                <label>🔢 Pitch No.</label>
+                <div class="input-wrapper">
+                    <input type="text" id="filterPitch" placeholder="All Pitches..." autocomplete="off">
+                </div>
+                <ul class="autocomplete-list" id="filterPitchList"></ul>
+            </div>
+        </section>
+
+        <!-- Stats Overview Cards -->
+        <section class="stats-grid">
+            <div class="stat-box"><span class="label">1ST BAT WIN %</span><span class="value green-txt" id="win1stPct">0%</span></div>
+            <div class="stat-box"><span class="label">2ND BAT (CHASE) WIN %</span><span class="value cyan-txt" id="win2ndPct">0%</span></div>
+            
+            <div class="stat-box"><span class="label">AVG 1ST INNS SCORE</span><span class="value main-color-txt" id="avg1stScore">0</span></div>
+            <div class="stat-box"><span class="label">AVG 2ND INNS SCORE</span><span class="value cyan-txt" id="avg2ndScore">0</span></div>
+            
+            <div class="stat-box"><span class="label">AVG 1ST INNS WKTS</span><span class="value orange-txt" id="avg1stWkts">0</span></div>
+            <div class="stat-box"><span class="label">AVG 2ND INNS WKTS</span><span class="value orange-txt" id="avg2ndWkts">0</span></div>
+            
+            <div class="stat-box"><span class="label">1ST INN PACERS WKT</span><span class="value purple-txt" id="avg1stPacers">0</span></div>
+            <div class="stat-box"><span class="label">1ST INN SPINNERS WKT</span><span class="value purple-txt" id="avg1stSpinners">0</span></div>
+            
+            <div class="stat-box"><span class="label">2ND INN PACERS WKT</span><span class="value purple-txt" id="avg2ndPacers">0</span></div>
+            <div class="stat-box"><span class="label">2ND INN SPINNERS WKT</span><span class="value purple-txt" id="avg2ndSpinners">0</span></div>
+        </section>
+
+        <button type="button" class="btn-primary" id="openModalBtn" style="display: none;">+ Add Match Scorecard</button>
+
+        <section class="history-section">
+            <h2>SAVED SCORECARDS <span id="liveStatus" class="live-dot">🔵 Live</span></h2>
+            <div class="match-list" id="matchList">
+                <p class="empty-state">Loading real-time matches...</p>
+            </div>
+            <button type="button" id="toggleHistoryBtn" class="btn-toggle" style="display: none;">Show All Matches ⬇️</button>
+        </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-card login-card">
+            <div class="modal-top">
+                <h3>Admin Login</h3>
+                <button type="button" class="modal-close" id="closeLoginBtn">&times;</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group full-width">
+                    <label>Email</label>
+                    <input type="email" id="adminEmail" requi
