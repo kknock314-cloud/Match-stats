@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pitchstats-cache-blue-v2';
+const CACHE_NAME = 'pitchstats-cache-blue-v3';
 const urlsToCache = ['./', './index.html', './style.css', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))));
 self.addEventListener('fetch', e => {

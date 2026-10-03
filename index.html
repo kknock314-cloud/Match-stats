@@ -52,7 +52,7 @@
             </div>
         </section>
 
-        <!-- Stats Overview Cards (Updated to show 1st/2nd Innings Pacer & Spinner Avgs) -->
+        <!-- Stats Overview Cards -->
         <section class="stats-grid">
             <div class="stat-box"><span class="label">AVG 1ST INNS SCORE</span><span class="value main-color-txt" id="avg1stScore">0</span></div>
             <div class="stat-box"><span class="label">AVG 2ND INNS SCORE</span><span class="value cyan-txt" id="avg2ndScore">0</span></div>
@@ -77,6 +77,11 @@
         </section>
     </main>
 
+    <!-- Datalists for Suggestions -->
+    <datalist id="leagueSuggestions"></datalist>
+    <datalist id="teamSuggestions"></datalist>
+    <datalist id="venueSuggestions"></datalist>
+
     <!-- Login Modal -->
     <div class="modal-overlay" id="loginModal">
         <div class="modal-card login-card">
@@ -99,7 +104,7 @@
         </div>
     </div>
 
-    <!-- Add/Edit Match Modal (With Custom Autocomplete Dropdowns) -->
+    <!-- Add/Edit Match Modal -->
     <div class="modal-overlay" id="addModal">
         <div class="modal-card">
             <div class="modal-top">
@@ -115,58 +120,54 @@
                 
                 <div class="form-group full-width autocomplete-container">
                     <label>League / Series Name</label>
-                    <input type="text" id="leagueName" placeholder="e.g. IPL 2026" required autocomplete="off">
-                    <ul class="autocomplete-list" id="leagueList"></ul>
+                    <input type="text" id="leagueName" list="leagueSuggestions" placeholder="e.g. IPL 2026" autocomplete="off">
                 </div>
                 
                 <div class="row-2">
                     <div class="form-group autocomplete-container">
                         <label>Team 1 (Bat First)</label>
-                        <input type="text" id="team1" placeholder="e.g. MI" required autocomplete="off">
-                        <ul class="autocomplete-list" id="team1List"></ul>
+                        <input type="text" id="team1" list="teamSuggestions" placeholder="e.g. MI" autocomplete="off">
                     </div>
                     <div class="form-group autocomplete-container">
                         <label>Team 2 (Chase)</label>
-                        <input type="text" id="team2" placeholder="e.g. CSK" required autocomplete="off">
-                        <ul class="autocomplete-list" id="team2List"></ul>
+                        <input type="text" id="team2" list="teamSuggestions" placeholder="e.g. CSK" autocomplete="off">
                     </div>
                 </div>
 
                 <div class="row-2">
                     <div class="form-group autocomplete-container">
                         <label>Venue / Stadium</label>
-                        <input type="text" id="venue" placeholder="e.g. Wankhede" required autocomplete="off">
-                        <ul class="autocomplete-list" id="venueList"></ul>
+                        <input type="text" id="venue" list="venueSuggestions" placeholder="e.g. Wankhede" autocomplete="off">
                     </div>
                     <div class="form-group">
                         <label>Pitch No. & Match No.</label>
                         <div class="inline-inputs">
-                            <input type="text" id="pitchNo" placeholder="Pitch 4" required autocomplete="off">
-                            <input type="number" id="matchNo" placeholder="Match #" required autocomplete="off">
+                            <input type="text" id="pitchNo" placeholder="Pitch 4" autocomplete="off">
+                            <input type="number" id="matchNo" placeholder="Match #" autocomplete="off">
                         </div>
                     </div>
                 </div>
 
                 <div class="form-divider"><span>1st Innings</span></div>
                 <div class="row-3">
-                    <div class="form-group"><label>Runs</label><input type="number" id="inn1Runs" required></div>
-                    <div class="form-group"><label>Wickets</label><input type="number" id="inn1Wkts" min="0" max="10" required></div>
-                    <div class="form-group"><label>Overs</label><input type="number" step="0.1" id="inn1Overs" required></div>
+                    <div class="form-group"><label>Runs</label><input type="number" id="inn1Runs"></div>
+                    <div class="form-group"><label>Wickets</label><input type="number" id="inn1Wkts" min="0" max="10"></div>
+                    <div class="form-group"><label>Overs</label><input type="number" step="0.1" id="inn1Overs"></div>
                 </div>
                 <div class="row-2">
-                    <div class="form-group"><label>Pacers Wkts</label><input type="number" id="inn1Pacers" min="0" max="10" required></div>
-                    <div class="form-group"><label>Spinners Wkts</label><input type="number" id="inn1Spinners" min="0" max="10" required></div>
+                    <div class="form-group"><label>Pacers Wkts</label><input type="number" id="inn1Pacers" min="0" max="10"></div>
+                    <div class="form-group"><label>Spinners Wkts</label><input type="number" id="inn1Spinners" min="0" max="10"></div>
                 </div>
 
                 <div class="form-divider"><span>2nd Innings</span></div>
                 <div class="row-3">
-                    <div class="form-group"><label>Runs</label><input type="number" id="inn2Runs" required></div>
-                    <div class="form-group"><label>Wickets</label><input type="number" id="inn2Wkts" min="0" max="10" required></div>
-                    <div class="form-group"><label>Overs</label><input type="number" step="0.1" id="inn2Overs" required></div>
+                    <div class="form-group"><label>Runs</label><input type="number" id="inn2Runs"></div>
+                    <div class="form-group"><label>Wickets</label><input type="number" id="inn2Wkts" min="0" max="10"></div>
+                    <div class="form-group"><label>Overs</label><input type="number" step="0.1" id="inn2Overs"></div>
                 </div>
                 <div class="row-2">
-                    <div class="form-group"><label>Pacers Wkts</label><input type="number" id="inn2Pacers" min="0" max="10" required></div>
-                    <div class="form-group"><label>Spinners Wkts</label><input type="number" id="inn2Spinners" min="0" max="10" required></div>
+                    <div class="form-group"><label>Pacers Wkts</label><input type="number" id="inn2Pacers" min="0" max="10"></div>
+                    <div class="form-group"><label>Spinners Wkts</label><input type="number" id="inn2Spinners" min="0" max="10"></div>
                 </div>
 
                 <button type="submit" class="btn-primary submit-btn" id="saveMatchBtn">Save Scorecard</button>

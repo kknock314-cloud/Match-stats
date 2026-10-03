@@ -63,3 +63,4 @@ input:focus, select:focus { border-color: var(--primary); }
     padding: 10px; cursor: pointer; color: var(--text-primary); font-size: 13px; border-bottom: 1px solid var(--border-color);
 }
 .autocomplete-list li:hover { background: rgba(59, 130, 246, 0.2); }
+input::-webkit-calendar-picker-indicator { display: none !important; }
