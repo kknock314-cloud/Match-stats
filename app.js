@@ -1,4 +1,4 @@
-import { db, auth } from "./firebase-config.js";
+import { db, auth } from "./firebase-config.js?v=18";
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -319,6 +319,10 @@ setupSmartDropdown('filterVenue', 'filterVenueList', m => m.venue, true);
 setupSmartDropdown('filterTeam', 'filterTeamList', m => [m.team1, m.team2], true);
 setupSmartDropdown('filterPitch', 'filterPitchList', m => m.pitchNo, true);
 
+function updateFilterOptions() {
+    // Dropdowns are handled automatically now
+}
+
 function applyFiltersAndRender() {
     const s = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const searchTerms = getExpandedSearchTerms(s);
@@ -419,32 +423,9 @@ function renderList(matches) {
         </div>
     `;
 
-    if (matches.length <= 2) {
-        c.innerHTML = matches.map(createCard).join('');
-        if(toggleBtn) toggleBtn.style.display = 'none';
-    } else {
-        const visibleHtml = matches.slice(0, 2).map(createCard).join('');
-        const hiddenHtml = matches.slice(2).map(createCard).join('');
-        
-        c.innerHTML = `
-            ${visibleHtml}
-            <div id="hiddenLayer" class="hidden-layer">${hiddenHtml}</div>
-        `;
-        
-        if(toggleBtn) {
-            toggleBtn.style.display = 'block';
-            toggleBtn.innerText = 'Show All Matches ⬇️';
-            
-            toggleBtn.onclick = function() {
-                const hiddenLayer = document.getElementById('hiddenLayer');
-                if (hiddenLayer.style.display === 'flex') {
-                    hiddenLayer.style.display = 'none';
-                    toggleBtn.innerText = 'Show All Matches ⬇️';
-                } else {
-                    hiddenLayer.style.display = 'flex';
-                    toggleBtn.innerText = 'Hide Matches ⬆️';
-                }
-            };
-        }
-    }
+    // ALL MATCHES RENDERED DIRECTLY FOR SCROLLING
+    c.innerHTML = matches.map(createCard).join('');
+    
+    // HIDE TOGGLE BUTTON PERMANENTLY
+    if(toggleBtn) toggleBtn.style.display = 'none';
 }

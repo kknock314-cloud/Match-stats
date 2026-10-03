@@ -35,7 +35,21 @@ input:focus, select:focus { border-color: var(--primary); }
 .history-section h2 { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;}
 .live-dot { color: var(--primary); font-size: 10px; background: rgba(59, 130, 246, 0.15); padding: 2px 8px; border-radius: 10px; animation: pulse 2s infinite; border: 1px solid rgba(59, 130, 246, 0.3);}
 @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-.match-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* UPDATED MATCH LIST FOR SCROLLING */
+.match-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    max-height: 420px; 
+    overflow-y: auto; 
+    padding-right: 5px; 
+}
+.match-list::-webkit-scrollbar { width: 6px; }
+.match-list::-webkit-scrollbar-track { background: var(--bg-dark); border-radius: 4px; }
+.match-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+.match-list::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
 .hidden-layer { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
 .btn-toggle { background: var(--card-bg); border: 1px dashed var(--primary); color: var(--primary); padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; transition: 0.3s; margin-top: 10px; }
 .btn-toggle:hover { background: rgba(59, 130, 246, 0.1); }

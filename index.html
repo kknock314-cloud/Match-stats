@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PitchStats Pro</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+    <!-- CACHE BUSTING V18 -->
+    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="manifest" href="manifest.json?v=18">
     <meta name="theme-color" content="#121212">
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
@@ -93,9 +94,11 @@
 
         <section class="history-section">
             <h2>SAVED SCORECARDS <span id="liveStatus" class="live-dot">🔵 Live</span></h2>
+            <!-- MATCH LIST WITH SCROLLING -->
             <div class="match-list" id="matchList">
                 <p class="empty-state">Loading real-time matches...</p>
             </div>
+            <!-- BUTTON REMOVED IN JS, HIDDEN HERE -->
             <button type="button" id="toggleHistoryBtn" class="btn-toggle" style="display: none;">Show All Matches ⬇️</button>
         </section>
     </main>
@@ -240,11 +243,10 @@
         </div>
     </div>
 
-    <!-- MAIN JAVASCRIPT -->
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=18"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js?v=18'); });
         }
     </script>
 </body>
